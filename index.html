@@ -81,24 +81,6 @@
                 background: #3a7bc0;
             }
 
-            /* Trash Zone */
-            .trash-zone {
-                background: #5a1818;
-                border: 2px dashed #ff4444;
-                color: #ff9999;
-                padding: 10px 20px;
-                border-radius: 4px;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: background 0.2s;
-            }
-            .trash-zone.drag-over {
-                background: #8a1818;
-                color: #fff;
-            }
-
             /* Tier Board */
             .tier-board {
                 display: flex;
@@ -222,6 +204,7 @@
             .aspect-mode-inactive .tier-item-wrap {
                 width: 70px;
                 height: 70px;
+                aspect-ratio: auto;
             }
             .aspect-mode-inactive .tier-item-img {
                 width: 70px;
@@ -232,6 +215,7 @@
             .aspect-mode-active .tier-item-wrap {
                 height: 70px;
                 width: auto;
+                aspect-ratio: auto;
             }
             .aspect-mode-active .tier-item-img {
                 height: 70px;
@@ -312,7 +296,7 @@
                 background: #2a2a2a;
                 padding: 20px;
                 border-radius: 8px;
-                width: 320px;
+                width: 340px;
                 display: flex;
                 flex-direction: column;
                 gap: 15px;
@@ -340,6 +324,7 @@
             .modal-actions {
                 display: flex;
                 justify-content: space-between;
+                gap: 8px;
                 margin-top: 10px;
             }
             .btn-danger {
@@ -348,16 +333,58 @@
             .btn-danger:hover {
                 background: #aa2222;
             }
+            .btn-info {
+                background: #2b5c8f;
+            }
+            .btn-info:hover {
+                background: #3a7bc0;
+            }
 
+            /* FIXED: Rendered at 30% larger dimensions without background crop boxes */
             .modal-img-preview {
                 max-width: 100%;
-                max-height: 150px;
+                max-height: 260px;
+                width: auto;
+                height: auto;
                 object-fit: contain;
-                border-radius: 4px;
-                margin: 0 auto;
                 display: block;
-                background: #111;
-                padding: 5px;
+                margin: 0 auto;
+                border-radius: 4px;
+            }
+
+            /* Loading overlay styling rules */
+            .loading-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+                visibility: hidden;
+                opacity: 0;
+                transition: opacity 0.15s, visibility 0.15s;
+            }
+            .loading-overlay.active {
+                visibility: visible;
+                opacity: 1;
+            }
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid #444;
+                border-top: 4px solid #3a7bc0;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin-bottom: 10px;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
             }
         </style>
     </head>
@@ -377,7 +404,6 @@
             </button>
             <button id="export-json-btn">Export JSON</button>
             <button id="import-json-btn">Import JSON</button>
-            <div id="trash-zone" class="trash-zone">🗑️ Drag Here to Delete</div>
         </div>
 
         <div class="workspace-container" id="workspace">
@@ -387,6 +413,12 @@
                 <h3>Image Bank</h3>
                 <div class="image-bank aspect-mode-inactive" id="image-bank"></div>
             </div>
+        </div>
+
+        <!-- Dynamic Screen Loading HUD Component Layer -->
+        <div id="loading-indicator" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div id="loading-text" style="font-weight: bold;">Processing...</div>
         </div>
 
         <!-- Global Portal Element to handle clipping-free high-res zoom -->
@@ -423,7 +455,9 @@
                     Description / Notes:
                     <textarea id="modal-item-desc" placeholder="Type an item description here..."></textarea>
                 </label>
-                <div class="modal-actions" style="justify-content: flex-end">
+                <div class="modal-actions">
+                    <button id="modal-item-delete-btn" class="btn-danger" title="Permanently delete item">Delete</button>
+                    <button id="modal-item-view-btn" class="btn-info" title="Open full scale asset in a new tab">View Image</button>
                     <button id="modal-item-save-btn">Save Changes</button>
                 </div>
             </div>
@@ -445,12 +479,56 @@
             let SilverDraggedElement = null;
             let activeModalTierId = null;
             let activeModalItemWrap = null;
+            let hasUnsavedChanges = false;
 
             document.addEventListener("DOMContentLoaded", () => {
                 renderBoard();
                 renderBank();
                 setupEventListeners();
+                
+                // Initialize the structural view on boot based directly on tracking state settings
+                applyLayoutMode(state.settings.layout);
             });
+
+            function markUnsaved() {
+                hasUnsavedChanges = true;
+            }
+
+            function clearUnsaved() {
+                hasUnsavedChanges = false;
+            }
+
+            // Unsaved change window interception triggers
+            window.addEventListener("beforeunload", (e) => {
+                if (hasUnsavedChanges) {
+                    e.preventDefault();
+                    e.returnValue = "You have unsaved changes on your tier list. Are you sure you want to leave?";
+                }
+            });
+
+            // Loading system handlers
+            function showLoading(msg) {
+                document.getElementById("loading-text").innerText = msg || "Processing...";
+                document.getElementById("loading-indicator").classList.add("active");
+            }
+
+            function hideLoading() {
+                document.getElementById("loading-indicator").classList.remove("active");
+            }
+
+            function applyLayoutMode(mode) {
+                const workspace = document.getElementById("workspace");
+                const toggleBtn = document.getElementById("layout-toggle-btn");
+                if (mode === "sidebar") {
+                    state.settings.layout = "sidebar";
+                    workspace.classList.add("sidebar-mode");
+                    toggleBtn.innerText = "⬇ Switch to Bottom Bank";
+                } else {
+                    state.settings.layout = "bottom";
+                    workspace.classList.remove("sidebar-mode");
+                    toggleBtn.innerText = "↔ Switch to Sidebar Bank";
+                }
+            }
 
             // Generates a clean canvas representing the element layout rules
             function createDragGhostCanvas(imgElement) {
@@ -512,19 +590,26 @@
                     .getElementById("image-loader")
                     .addEventListener("change", async (e) => {
                         const files = Array.from(e.target.files);
-                        for (const file of files) {
-                            await new Promise((resolve) => {
-                                const reader = new FileReader();
-                                reader.onload = (evt) => {
-                                    state.bank.push(evt.target.result);
-                                    resolve();
-                                };
-                                reader.onerror = () => resolve();
-                                reader.readAsDataURL(file);
-                            });
-                        }
-                        renderBank();
-                        e.target.value = "";
+                        if(files.length === 0) return;
+                        
+                        showLoading("Importing local image assets...");
+                        setTimeout(async () => {
+                            for (const file of files) {
+                                await new Promise((resolve) => {
+                                    const reader = new FileReader();
+                                    reader.onload = (evt) => {
+                                        state.bank.push(evt.target.result);
+                                        resolve();
+                                    };
+                                    reader.onerror = () => resolve();
+                                    reader.readAsDataURL(file);
+                                });
+                            }
+                            renderBank();
+                            markUnsaved();
+                            e.target.value = "";
+                            hideLoading();
+                        }, 50);
                     });
 
                 document
@@ -532,8 +617,19 @@
                     .addEventListener("click", () => {
                         const url = prompt("Enter image URL:");
                         if (url) {
-                            state.bank.push(url);
-                            renderBank();
+                            showLoading("Fetching target asset URL data...");
+                            const tempImg = new Image();
+                            tempImg.onload = () => {
+                                state.bank.push(url);
+                                renderBank();
+                                markUnsaved();
+                                hideLoading();
+                            };
+                            tempImg.onerror = () => {
+                                alert("Failed to resolve or parse image asset file data stream from targeted pointer origin path.");
+                                hideLoading();
+                            };
+                            tempImg.src = url;
                         }
                     });
 
@@ -548,6 +644,7 @@
                             images: [],
                         });
                         renderBoard();
+                        markUnsaved();
                     });
 
                 document
@@ -555,41 +652,41 @@
                     .addEventListener("change", (e) => {
                         state.settings.aspectRatio = e.target.value;
                         updateGlobalAspectClass();
+                        markUnsaved();
                     });
 
                 document
                     .getElementById("layout-toggle-btn")
                     .addEventListener("click", () => {
-                        const workspace = document.getElementById("workspace");
-                        const toggleBtn =
-                            document.getElementById("layout-toggle-btn");
                         if (state.settings.layout === "bottom") {
-                            state.settings.layout = "sidebar";
-                            workspace.classList.add("sidebar-mode");
-                            toggleBtn.innerText = "⬇ Switch to Bottom Bank";
+                            applyLayoutMode("sidebar");
                         } else {
-                            state.settings.layout = "bottom";
-                            workspace.classList.remove("sidebar-mode");
-                            toggleBtn.innerText = "↔ Switch to Sidebar Bank";
+                            applyLayoutMode("bottom");
                         }
+                        markUnsaved();
                     });
 
                 document
                     .getElementById("export-json-btn")
                     .addEventListener("click", () => {
-                        syncStateFromDOM();
-                        const dataStr =
-                            "data:text/json;charset=utf-8," +
-                            encodeURIComponent(JSON.stringify(state));
-                        const downloadAnchor = document.createElement("a");
-                        downloadAnchor.setAttribute("href", dataStr);
-                        downloadAnchor.setAttribute(
-                            "download",
-                            "tier-list.json",
-                        );
-                        document.body.appendChild(downloadAnchor);
-                        downloadAnchor.click();
-                        downloadAnchor.remove();
+                        showLoading("Compiling tracking system export parameters...");
+                        setTimeout(() => {
+                            syncStateFromDOM();
+                            const dataStr =
+                                "data:text/json;charset=utf-8," +
+                                encodeURIComponent(JSON.stringify(state));
+                            const downloadAnchor = document.createElement("a");
+                            downloadAnchor.setAttribute("href", dataStr);
+                            downloadAnchor.setAttribute(
+                                "download",
+                                "tier-list.json",
+                            );
+                            document.body.appendChild(downloadAnchor);
+                            downloadAnchor.click();
+                            downloadAnchor.remove();
+                            clearUnsaved();
+                            hideLoading();
+                        }, 100);
                     });
 
                 document
@@ -600,83 +697,48 @@
                         input.accept = ".json";
                         input.onchange = (e) => {
                             const file = e.target.files[0];
-                            const reader = new FileReader();
-                            reader.onload = (evt) => {
-                                try {
-                                    const parsed = JSON.parse(
-                                        evt.target.result,
-                                    );
-                                    if (parsed.tiers && parsed.bank) {
-                                        state = parsed;
-                                        if (!state.descriptions)
-                                            state.descriptions = {};
+                            if(!file) return;
 
-                                        document.getElementById(
-                                            "aspect-ratio-select",
-                                        ).value =
-                                            state.settings.aspectRatio ||
-                                            "square";
+                            showLoading("Parsing target layout document schema...");
+                            setTimeout(() => {
+                                const reader = new FileReader();
+                                reader.onload = (evt) => {
+                                    try {
+                                        const parsed = JSON.parse(
+                                            evt.target.result,
+                                        );
+                                        if (parsed.tiers && parsed.bank) {
+                                            state = parsed;
+                                            if (!state.descriptions)
+                                                state.descriptions = {};
 
-                                        const workspace =
                                             document.getElementById(
-                                                "workspace",
-                                            );
-                                        const toggleBtn =
-                                            document.getElementById(
-                                                "layout-toggle-btn",
-                                            );
-                                        if (
-                                            state.settings.layout === "sidebar"
-                                        ) {
-                                            workspace.classList.add(
-                                                "sidebar-mode",
-                                            );
-                                            toggleBtn.innerText =
-                                                "⬇ Switch to Bottom Bank";
+                                                "aspect-ratio-select",
+                                            ).value =
+                                                state.settings.aspectRatio ||
+                                                "square";
+
+                                            applyLayoutMode(state.settings.layout || "bottom");
+                                            updateGlobalAspectClass();
+                                            renderBoard();
+                                            renderBank();
+                                            clearUnsaved();
                                         } else {
-                                            workspace.classList.remove(
-                                                "sidebar-mode",
-                                            );
-                                            toggleBtn.innerText =
-                                                "↔ Switch to Sidebar Bank";
+                                            alert("Invalid JSON format structure.");
                                         }
-
-                                        updateGlobalAspectClass();
-                                        renderBoard();
-                                        renderBank();
-                                    } else {
-                                        alert("Invalid JSON format structure.");
+                                    } catch (err) {
+                                        alert(
+                                            "Error reading JSON file formatting.",
+                                        );
+                                    } finally {
+                                        hideLoading();
                                     }
-                                } catch (err) {
-                                    alert(
-                                        "Error reading JSON file formatting.",
-                                    );
-                                }
-                            };
-                            reader.readAsText(file);
+                                };
+                                reader.readAsText(file);
+                            }, 100);
                         };
                         input.click();
                     });
-
-                const trashZone = document.getElementById("trash-zone");
-                trashZone.addEventListener("dragover", (e) => {
-                    e.preventDefault();
-                    trashZone.classList.add("drag-over");
-                });
-                trashZone.addEventListener("dragleave", () => {
-                    trashZone.classList.remove("drag-over");
-                });
-                trashZone.addEventListener("drop", (e) => {
-                    e.preventDefault();
-                    trashZone.classList.remove("drag-over");
-                    if (SilverDraggedElement) {
-                        SilverDraggedElement.closest(
-                            ".tier-item-wrap",
-                        ).remove();
-                        hideZoomPortal();
-                        syncStateFromDOM();
-                    }
-                });
 
                 document
                     .getElementById("modal-close-btn")
@@ -700,6 +762,7 @@
                                 closeModal();
                                 renderBoard();
                                 renderBank();
+                                markUnsaved();
                             }
                         }
                     });
@@ -721,11 +784,51 @@
                             } else {
                                 delete state.descriptions[img.src];
                             }
+                            markUnsaved();
                         }
                         document
                             .getElementById("item-modal")
                             .classList.remove("active");
                         activeModalItemWrap = null;
+                    });
+
+                document
+                    .getElementById("modal-item-delete-btn")
+                    .addEventListener("click", () => {
+                        if (activeModalItemWrap) {
+                            if (confirm("Are you sure you want to permanently delete this item asset element?")) {
+                                const img = activeModalItemWrap.querySelector(".tier-item-img");
+                                if (img && state.descriptions[img.src]) {
+                                    delete state.descriptions[img.src];
+                                }
+                                activeModalItemWrap.remove();
+                                hideZoomPortal();
+                                syncStateFromDOM();
+                                markUnsaved();
+                                document.getElementById("item-modal").classList.remove("active");
+                                activeModalItemWrap = null;
+                            }
+                        }
+                    });
+
+                // New Open Image in New Tab handler pipeline 
+                document
+                    .getElementById("modal-item-view-btn")
+                    .addEventListener("click", () => {
+                        if (activeModalItemWrap) {
+                            const img = activeModalItemWrap.querySelector(".tier-item-img");
+                            if (img && img.src) {
+                                const newTab = window.open();
+                                if (newTab) {
+                                    newTab.document.write(`<img src="${img.src}" style="max-width:100%; height:auto; display:block; margin:20px auto; background:#111; box-shadow:0 4px 10px rgba(0,0,0,0.5); border-radius:4px;" />`);
+                                    newTab.document.body.style.background = "#1a1a1a";
+                                    newTab.document.title = "View Tier List Asset Element";
+                                    newTab.document.close();
+                                } else {
+                                    alert("Popup blocked! Please allow popups for this site to open images natively.");
+                                }
+                            }
+                        }
                     });
             }
 
@@ -749,6 +852,7 @@
                     tier.color =
                         document.getElementById("modal-tier-color").value;
                     renderBoard();
+                    markUnsaved();
                 }
                 document
                     .getElementById("tier-modal")
@@ -778,7 +882,6 @@
                 
                 portalImg.src = imgElement.src;
                 
-                // Track dynamic widths when working in "Keep Aspect Ratio" settings
                 portal.style.width = `${rect.width}px`;
                 portal.style.height = `${rect.height}px`;
                 
@@ -917,7 +1020,7 @@
                     
                     img.style.opacity = "0.4";
                     setTimeout(() => {
-                        wrapper.style.opacity = "0.2";
+                        wrapper.style.opacity = "0.6";
                     }, 0);
                 });
 
@@ -927,6 +1030,7 @@
                     wrapper.style.opacity = "1";
                     img.style.visibility = "visible";
                     syncStateFromDOM();
+                    markUnsaved();
                 });
 
                 wrapper.appendChild(trigger);
@@ -943,6 +1047,7 @@
                     state.tiers[index] = state.tiers[targetIndex];
                     state.tiers[targetIndex] = temp;
                     renderBoard();
+                    markUnsaved();
                 }
             }
 
