@@ -1,6 +1,7 @@
 [Click here to use the web version without downloading it.](https://milk3e.github.io/Tier-List-Maker/)
 
 
+
 This is an html file you can open with your web browser, it lets you import images and create [tier lists.](https://en.wikipedia.org/wiki/Tier_list)
 
 It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash in only 2 iterations, and only took a few minutes to test and consider complete.
