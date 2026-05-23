@@ -1,8 +1,6 @@
-<img width="400" height="225" alt="tl" src="https://github.com/user-attachments/assets/5539072f-dc9e-4b5a-8a30-34b4ef1f7272" />
-
 [Click here to use the web version without downloading it.](https://milk3e.github.io/Tier-List-Maker/)
 
-
+<img width="400" height="225" alt="tl" src="https://github.com/user-attachments/assets/5539072f-dc9e-4b5a-8a30-34b4ef1f7272" />
 
 This is a standalone HTML file you can open with your web browser, it lets you create [tier lists.](https://en.wikipedia.org/wiki/Tier_list)
 
