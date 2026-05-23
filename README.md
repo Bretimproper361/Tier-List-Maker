@@ -26,6 +26,6 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash, and it onl
 - To save your tier list, click Export JSON, then when you want to load it, click Import JSON. Otherwise, the tier list is lost if you refresh or close the tab.
 
 If you want to use existing tier list images, there's an easy way to do so.
-In Firefox (or any Firefox fork), pressing Ctrl+I opens page info. While on a page with the images you want, you can go to the Media tab, sort by Type so you can see just images next to eachother, select the images you want and download them, then just add them into this tier list maker. If they are image items of a tier list, they will often all share the same file path, making it easy to Shift+Click just what you want and not any extra stuff like GUI/page elements.
+In Firefox (or any Firefox fork), pressing Ctrl+I opens page info. While on a page with the images you want, you can go to the Media tab, sort by Type so you can see just 'Image' labeled media next to eachother, select the images you want and download them, then just add them into the tier list maker. Images from tier list sites often all share the same file path, making it easy to Shift+Click just what you want and not any extra stuff like GUI/page elements.
 
 This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with it.
