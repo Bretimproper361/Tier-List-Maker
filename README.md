@@ -5,7 +5,7 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash in only 2 i
 **Features**
 - Creatable, moveable, colorable, deletable tiers.
 - Import images by file or by URL, move and sort within tiers, can crop into squares or keep aspect ratio, and can delete them.
-- Save/Load by exporting and importing a .json file that contains the entire tier list and its images
+- Save/Load by exporting and importing a .json file that contains the entire tier list and its images.
 - Lightweight, bloat-free, fully offline and local.
 
 **How to Use**
