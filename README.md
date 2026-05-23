@@ -1,3 +1,6 @@
+[Click here to use the web version without downloading it.](https://milk3e.github.io/Tier-List-Maker/)
+Otherwise, you can download 'index.html' and use it locally.
+
 This is an html file you can open with your web browser, it lets you import images and create [tier lists.](https://en.wikipedia.org/wiki/Tier_list)
 
 It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash in only 2 iterations, and only took a few minutes to test and consider complete.
@@ -8,7 +11,7 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash in only 2 i
 - Save/Load by exporting and importing a .json file that contains the entire tier list and its images.
 - Lightweight, bloat-free, fully offline and local.
 
-**How to Use**
+**How to Download**
 1. Download 'index.html' by either clicking it above in the file list and then clicking the download button, or by just clicking the green 'Code' button, downloading the zip, and extracting it.
 2. Double-click the html file to run it directly in your web browser.
 3. Have fun!
