@@ -122,7 +122,7 @@
                 font-size: 1.1em;
                 width: 100%;
                 color: inherit;
-                pointer-events: none; /* Allows click to pass to label container */
+                pointer-events: none;
             }
 
             /* Image Grids */
@@ -151,21 +151,66 @@
                 border: 2px dashed #444;
             }
 
-            /* Images Layout Settings */
+            /* Layout Isolation Containers */
+            .tier-item-wrap {
+                width: 70px;
+                height: 70px;
+                position: relative;
+                display: inline-block;
+            }
+
+            /* Core Item Images Layout Base Styling */
             .tier-item-img {
                 height: 70px;
                 cursor: grab;
+                transition:
+                    transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    box-shadow 0.15s ease-out;
+                transform-origin: center center;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 1;
             }
+
+            /* Enhanced Performance Zoom Effect Overlays */
+            .tier-item-img:hover {
+                transform: scale(
+                    2.5
+                ); /* Boosted layout zoom scaling footprint size */
+                z-index: 100;
+                box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.85);
+                border-radius: 2px;
+
+                /* Completely drops the forced aspect width layout block safely */
+                width: auto !important;
+                max-width: 300px; /* Safeguard parameters to prevent extreme horizontal widescreen spans */
+                object-fit: contain !important;
+            }
+
             .fit-square {
                 width: 70px;
                 object-fit: cover;
             }
             .fit-aspect {
+                position: relative;
                 width: auto;
                 object-fit: contain;
             }
 
-            /* Modal Menu Popups */
+            /* Custom alignment fix override whenever application state handles loose aspect ratio settings natively */
+            .aspect-mode-active .tier-item-wrap {
+                width: auto;
+                min-width: 40px;
+            }
+            .aspect-mode-active .tier-item-img {
+                position: relative;
+            }
+            .aspect-mode-active .tier-item-img:hover {
+                position: absolute;
+            }
+
+            /* Modal Popup Windows */
             .modal-overlay {
                 position: fixed;
                 top: 0;
@@ -243,12 +288,12 @@
         </div>
 
         <!-- Tier Rows Container -->
-        <div class="tier-board" id="tier-board"></div>
+        <div class="tier-board aspect-mode-inactive" id="tier-board"></div>
 
         <!-- Unused Image Bank -->
         <div class="image-bank-container">
             <h3>Image Bank</h3>
-            <div class="image-bank" id="image-bank"></div>
+            <div class="image-bank aspect-mode-inactive" id="image-bank"></div>
         </div>
 
         <!-- Tier Actions Settings Popup Menu -->
@@ -285,7 +330,7 @@
                 bank: [],
             };
 
-            let draggedElement = null;
+            let SilverDraggedElement = null;
             let activeModalTierId = null;
 
             // --- Initial Setup ---
@@ -294,8 +339,24 @@
                 setupEventListeners();
             });
 
+            function updateGlobalAspectClass() {
+                const board = document.getElementById("tier-board");
+                const bank = document.getElementById("image-bank");
+                if (state.settings.aspectRatio === "aspect") {
+                    board.classList.add("aspect-mode-active");
+                    board.classList.remove("aspect-mode-inactive");
+                    bank.classList.add("aspect-mode-active");
+                    bank.classList.remove("aspect-mode-inactive");
+                } else {
+                    board.classList.remove("aspect-mode-active");
+                    board.classList.add("aspect-mode-inactive");
+                    bank.classList.remove("aspect-mode-active");
+                    bank.classList.add("aspect-mode-inactive");
+                }
+            }
+
             function setupEventListeners() {
-                // File Input Loader (Paced Sequential Processing)
+                // File Input Loader
                 document
                     .getElementById("image-loader")
                     .addEventListener("change", async (e) => {
@@ -345,6 +406,7 @@
                     .getElementById("aspect-ratio-select")
                     .addEventListener("change", (e) => {
                         state.settings.aspectRatio = e.target.value;
+                        updateGlobalAspectClass();
                         document
                             .querySelectorAll(".tier-item-img")
                             .forEach((img) => {
@@ -371,7 +433,7 @@
                         downloadAnchor.remove();
                     });
 
-                // JSON Import (FIXED to read correctly as standard text)
+                // JSON Import
                 document
                     .getElementById("import-json-btn")
                     .addEventListener("click", () => {
@@ -393,6 +455,7 @@
                                         ).value =
                                             state.settings.aspectRatio ||
                                             "square";
+                                        updateGlobalAspectClass();
                                         renderBoard();
                                         renderBank();
                                     } else {
@@ -404,7 +467,7 @@
                                     );
                                 }
                             };
-                            reader.readAsText(file); // Fixed: reads as plain string text instead of dataURL
+                            reader.readAsText(file);
                         };
                         input.click();
                     });
@@ -421,8 +484,10 @@
                 trashZone.addEventListener("drop", (e) => {
                     e.preventDefault();
                     trashZone.classList.remove("drag-over");
-                    if (draggedElement) {
-                        draggedElement.remove(); // Expels the item entirely from current DOM structure
+                    if (SilverDraggedElement) {
+                        SilverDraggedElement.closest(
+                            ".tier-item-wrap",
+                        ).remove();
                         syncStateFromDOM();
                     }
                 });
@@ -455,7 +520,6 @@
                     });
             }
 
-            // --- Context Menu Settings Box Modal Management ---
             function openModal(tierId) {
                 activeModalTierId = tierId;
                 const tier = state.tiers.find((t) => t.id === tierId);
@@ -488,13 +552,13 @@
             function renderBoard() {
                 const board = document.getElementById("tier-board");
                 board.innerHTML = "";
+                updateGlobalAspectClass();
 
                 state.tiers.forEach((tier, index) => {
                     const row = document.createElement("div");
                     row.className = "tier-row";
                     row.dataset.id = tier.id;
 
-                    // Move Handles Column (Up/Down Buttons)
                     const handleCol = document.createElement("div");
                     handleCol.className = "tier-handle";
 
@@ -517,7 +581,6 @@
                     handleCol.appendChild(upBtn);
                     handleCol.appendChild(downBtn);
 
-                    // Label Box Layout (Clicking here opens popup menu control)
                     const label = document.createElement("div");
                     label.className = "tier-label";
                     label.style.backgroundColor = tier.color;
@@ -530,13 +593,14 @@
 
                     label.appendChild(nameDisplay);
 
-                    // Core Sortable Items Droppable Container
                     const itemsContainer = document.createElement("div");
                     itemsContainer.className = "tier-items";
                     setupDropContainer(itemsContainer);
 
                     tier.images.forEach((src) => {
-                        itemsContainer.appendChild(createImageElement(src));
+                        itemsContainer.appendChild(
+                            createImageWrapperElement(src),
+                        );
                     });
 
                     row.appendChild(handleCol);
@@ -550,37 +614,46 @@
                 const bank = document.getElementById("image-bank");
                 bank.innerHTML = "";
                 setupDropContainer(bank);
+                updateGlobalAspectClass();
 
                 state.bank.forEach((src) => {
-                    bank.appendChild(createImageElement(src));
+                    bank.appendChild(createImageWrapperElement(src));
                 });
             }
 
-            function createImageElement(src) {
+            function createImageWrapperElement(src) {
+                const wrapper = document.createElement("div");
+                wrapper.className = "tier-item-wrap";
+
                 const img = document.createElement("img");
                 img.src = src;
                 img.className = `tier-item-img fit-${state.settings.aspectRatio}`;
                 img.draggable = true;
 
                 img.addEventListener("dragstart", (e) => {
-                    draggedElement = img;
+                    SilverDraggedElement = img;
                     img.style.opacity = "0.4";
+                    // Brief timeout to hide the item from view when dragging without losing the cursor element blueprint
+                    setTimeout(() => {
+                        wrapper.style.opacity = "0.2";
+                    }, 0);
                 });
 
                 img.addEventListener("dragend", () => {
-                    draggedElement = null;
+                    SilverDraggedElement = null;
                     img.style.opacity = "1";
+                    wrapper.style.opacity = "1";
                     syncStateFromDOM();
                 });
 
-                return img;
+                wrapper.appendChild(img);
+                return wrapper;
             }
 
             function moveTierOrder(index, direction) {
                 syncStateFromDOM();
                 const targetIndex = index + direction;
                 if (targetIndex >= 0 && targetIndex < state.tiers.length) {
-                    // Swaps rows position records inside data model
                     const temp = state.tiers[index];
                     state.tiers[index] = state.tiers[targetIndex];
                     state.tiers[targetIndex] = temp;
@@ -593,38 +666,54 @@
             function setupDropContainer(container) {
                 container.addEventListener("dragover", (e) => {
                     e.preventDefault();
-                    if (!draggedElement) return;
+                    if (!SilverDraggedElement) return;
 
+                    const targetWrap =
+                        SilverDraggedElement.closest(".tier-item-wrap");
                     const afterElement = getDragAfterElement(
                         container,
                         e.clientX,
+                        e.clientY,
                     );
+
                     if (afterElement == null) {
-                        container.appendChild(draggedElement);
+                        container.appendChild(targetWrap);
                     } else {
-                        container.insertBefore(draggedElement, afterElement);
+                        container.insertBefore(targetWrap, afterElement);
                     }
                 });
             }
 
-            function getDragAfterElement(container, x) {
+            function getDragAfterElement(container, x, y) {
                 const draggableElements = [
-                    ...container.querySelectorAll(
-                        ".tier-item-img:not(.dragged)",
-                    ),
+                    ...container.querySelectorAll(".tier-item-wrap"),
                 ];
 
                 return draggableElements.reduce(
                     (closest, child) => {
+                        const img = child.querySelector(".tier-item-img");
+                        if (img === SilverDraggedElement) return closest;
+
                         const box = child.getBoundingClientRect();
-                        const offset = x - box.left - box.width / 2;
-                        if (offset < 0 && offset > closest.offset) {
-                            return { offset: offset, element: child };
+                        const boxCenterX = box.left + box.width / 2;
+                        const boxCenterY = box.top + box.height / 2;
+
+                        const isBefore = x < boxCenterX;
+                        const distance = Math.hypot(
+                            x - boxCenterX,
+                            y - boxCenterY,
+                        );
+
+                        if (distance < closest.distance) {
+                            return {
+                                distance: distance,
+                                element: isBefore ? child : child.nextSibling,
+                            };
                         } else {
                             return closest;
                         }
                     },
-                    { offset: Number.NEGATIVE_INFINITY },
+                    { distance: Number.POSITIVE_INFINITY, element: null },
                 ).element;
             }
 
