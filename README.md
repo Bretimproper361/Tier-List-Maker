@@ -23,6 +23,6 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash, and it onl
 - Click the Browse button to import image files, or click Add Image URL to instead use the image url from an image online.
 - Drag and drop images from the Image Bank into the tier you want to put it in, and organize them within the tier by moving them next to eachother.
 - If you want to add a description to an image that shows when hovering over it, just click on the image.
-- If you want your tier list to be saved, click Export JSON, then when you want to load it, click Import JSON. Otherwise, the tier list is lost if you refresh or close the tab.
+- To save your tier list, click Export JSON, then when you want to load it, click Import JSON. Otherwise, the tier list is lost if you refresh or close the tab.
 
 This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with it.
