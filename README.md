@@ -25,4 +25,9 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash, and it onl
 - If you want to add a description to an image that shows when hovering over it, click on it to open its menu. You can also view the image in a seperate tab or delete the image within that menu using the corresponding buttons.
 - To save your tier list, click Export JSON, then when you want to load it, click Import JSON. Otherwise, the tier list is lost if you refresh or close the tab.
 
+If you want to use existing tier list images, there's an easy way to do so.
+In Firefox (or any Firefox fork), pressing Ctrl+I opens page info. While on a page with the images you want, you can go to the Media tab of page info, sort by Type so you can see just images next to eachother, select the images you want and download them, then just add them into this tier list maker.
+For example, if the tier list is on tiermaker.com, after sorting by type and looking at just images, all of the items will be there with the same file path as eachother (for example, /images/media/template_images/00000000/), and you just grab those.
+I may consider adding a feature to instead add the url of a tiermaker link into this program and see if its easily parseable.
+
 This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with it.
