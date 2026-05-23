@@ -1,5 +1,5 @@
 [Click here to use the web version without downloading it.](https://milk3e.github.io/Tier-List-Maker/)
-Otherwise, you can download 'index.html' and use it locally.
+
 
 This is an html file you can open with your web browser, it lets you import images and create [tier lists.](https://en.wikipedia.org/wiki/Tier_list)
 
