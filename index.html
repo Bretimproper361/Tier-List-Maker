@@ -33,6 +33,7 @@
                 flex-grow: 1;
                 width: 70%;
             }
+            
             .workspace-container.sidebar-mode .image-bank-container {
                 width: 28%;
                 position: sticky;
@@ -40,7 +41,9 @@
                 max-height: 85vh;
                 display: flex;
                 flex-direction: column;
+                z-index: 10; 
             }
+            
             .workspace-container.sidebar-mode #image-bank {
                 flex-grow: 1;
                 overflow-y: auto;
@@ -134,7 +137,7 @@
                 color: #fff;
             }
 
-            /* Tier Label Column Fixes */
+            /* Tier Label Column */
             .tier-label {
                 width: 140px;
                 min-width: 140px;
@@ -168,8 +171,8 @@
                 display: flex;
                 flex-wrap: wrap;
                 align-content: flex-start;
-                gap: 4px;
-                padding: 4px;
+                gap: 6px;
+                padding: 6px;
                 flex-grow: 1;
                 min-height: 72px;
             }
@@ -189,90 +192,100 @@
                 border: 2px dashed #444;
             }
 
-            /* Layout Isolation Containers */
+            /* Grid Layout Wrapper Setup */
             .tier-item-wrap {
-                width: 70px;
-                height: 70px;
                 position: relative;
-                display: inline-block;
+                display: inline-grid;
+                grid-template-areas: "stack";
+                place-items: center;
+            }
+
+            /* THE HITBOX TRIGGER CONTAINER */
+            .hitbox-trigger {
+                grid-area: stack;
+                width: 100%;
+                height: 100%;
+                z-index: 10;
+                cursor: grab;
+                background: transparent;
             }
 
             /* Core Item Images Layout Base Styling */
             .tier-item-img {
+                grid-area: stack;
+                display: block;
+                z-index: 1;
+                pointer-events: none; 
+            }
+
+            /* Layout Mode Variations */
+            .aspect-mode-inactive .tier-item-wrap {
                 width: 70px;
                 height: 70px;
-                cursor: grab;
-                transition:
-                    transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1),
-                    box-shadow 0.15s ease-out;
-                transform-origin: center center;
-                position: absolute;
-                top: 0;
-                left: 0;
-                z-index: 1;
             }
-
-            /* Enhanced Performance Zoom Effect Overlays & Description Tooltips */
-            .tier-item-wrap:hover .tier-item-img {
-                transform: scale(2.2);
-                z-index: 100;
-                box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.85);
-                border-radius: 2px;
-                width: auto !important;
-                max-width: 300px;
-                object-fit: contain !important;
-            }
-
-            /* Tooltip Description Settings */
-            .item-tooltip {
-                position: absolute;
-                top: 115px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(0, 0, 0, 0.9);
-                color: #fff;
-                padding: 6px 10px;
-                border-radius: 4px;
-                font-size: 11px;
-                white-space: normal;
-                width: 130px;
-                text-align: center;
-                z-index: 101;
-                pointer-events: none;
-                opacity: 0;
-                visibility: hidden;
-                transition:
-                    opacity 0.15s ease,
-                    visibility 0.15s ease;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-                border: 1px solid #444;
-                word-break: break-word;
-            }
-            .tier-item-wrap:hover .item-tooltip {
-                opacity: 1;
-                visibility: visible;
-            }
-
-            .fit-square {
+            .aspect-mode-inactive .tier-item-img {
                 width: 70px;
+                height: 70px;
                 object-fit: cover;
             }
-            .fit-aspect {
-                position: relative;
+
+            .aspect-mode-active .tier-item-wrap {
+                height: 70px;
+                width: auto;
+            }
+            .aspect-mode-active .tier-item-img {
+                height: 70px;
                 width: auto;
                 object-fit: contain;
             }
 
-            /* Custom alignment fix override settings */
-            .aspect-mode-active .tier-item-wrap {
-                width: auto;
-                min-width: 40px;
+            /* GLOBAL ZOOM PORTAL PREVIEW */
+            #global-zoom-portal {
+                position: fixed;
+                width: 70px;
+                height: 70px;
+                pointer-events: none;
+                z-index: 99999;
+                display: none;
+                transform-origin: center center;
+                transform: scale(2.2);
+                transition: opacity 0.1s ease;
+                opacity: 0;
             }
-            .aspect-mode-active .tier-item-img {
-                position: relative;
+            
+            #global-zoom-portal img {
+                width: 100% !important;
+                height: 100% !important;
+                display: block;
+                object-fit: contain !important; 
+                filter: drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.85));
             }
-            .aspect-mode-active .tier-item-wrap:hover .tier-item-img {
+            
+            #global-zoom-portal .portal-tooltip {
                 position: absolute;
+                /* Position close to the bottom edge of the 2.2x scaled image container */
+                top: 76px;
+                left: 50%;
+                /* Neutralize the parent 2.2x zoom scale layout distortion */
+                transform: translateX(-50%) scale(calc(1 / 2.2));
+                transform-origin: top center;
+                background: rgba(0, 0, 0, 0.95);
+                color: #fff;
+                padding: 6px 10px;
+                border-radius: 5px;
+                font-size: 12px;
+                line-height: 1.4;
+                
+                /* Smart fluid scaling: wider boundaries to prevent run-offs */
+                min-width: 140px;
+                max-width: 280px;
+                width: max-content;
+                
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+                border: 1px solid #555;
+                word-break: break-word;
+                white-space: normal;
             }
 
             /* Modal Popup Windows */
@@ -289,9 +302,7 @@
                 z-index: 1000;
                 visibility: hidden;
                 opacity: 0;
-                transition:
-                    opacity 0.2s,
-                    visibility 0.2s;
+                transition: opacity 0.2s, visibility 0.2s;
             }
             .modal-overlay.active {
                 visibility: visible;
@@ -338,7 +349,6 @@
                 background: #aa2222;
             }
 
-            /* Preview Image Inside Item Modal */
             .modal-img-preview {
                 max-width: 100%;
                 max-height: 150px;
@@ -354,7 +364,6 @@
     <body>
         <h1>Tier List Maker</h1>
 
-        <!-- Action Toolbar -->
         <div class="toolbar">
             <input type="file" id="image-loader" multiple accept="image/*" />
             <button id="add-url-btn">Add Image URL</button>
@@ -368,26 +377,24 @@
             </button>
             <button id="export-json-btn">Export JSON</button>
             <button id="import-json-btn">Import JSON</button>
-
-            <!-- Drag-to-Delete Trash Area -->
             <div id="trash-zone" class="trash-zone">🗑️ Drag Here to Delete</div>
         </div>
 
         <div class="workspace-container" id="workspace">
-            <!-- Tier Rows Container -->
             <div class="tier-board aspect-mode-inactive" id="tier-board"></div>
 
-            <!-- Unused Image Bank -->
             <div class="image-bank-container">
                 <h3>Image Bank</h3>
-                <div
-                    class="image-bank aspect-mode-inactive"
-                    id="image-bank"
-                ></div>
+                <div class="image-bank aspect-mode-inactive" id="image-bank"></div>
             </div>
         </div>
 
-        <!-- Tier Actions Settings Popup Menu -->
+        <!-- Global Portal Element to handle clipping-free high-res zoom -->
+        <div id="global-zoom-portal">
+            <img id="portal-img" src="" alt="Zoom Preview" />
+            <div id="portal-text" class="portal-tooltip" style="display: none;"></div>
+        </div>
+
         <div id="tier-modal" class="modal-overlay">
             <div class="modal-content">
                 <h3>Edit Tier Settings</h3>
@@ -408,22 +415,13 @@
             </div>
         </div>
 
-        <!-- Item Detail Popup Modal (New Feature) -->
         <div id="item-modal" class="modal-overlay">
             <div class="modal-content">
                 <h3>Item Custom Details</h3>
-                <img
-                    id="modal-item-preview"
-                    class="modal-img-preview"
-                    src=""
-                    alt="Preview"
-                />
+                <img id="modal-item-preview" class="modal-img-preview" src="" alt="Preview" />
                 <label>
                     Description / Notes:
-                    <textarea
-                        id="modal-item-desc"
-                        placeholder="Type an item description here..."
-                    ></textarea>
+                    <textarea id="modal-item-desc" placeholder="Type an item description here..."></textarea>
                 </label>
                 <div class="modal-actions" style="justify-content: flex-end">
                     <button id="modal-item-save-btn">Save Changes</button>
@@ -432,7 +430,6 @@
         </div>
 
         <script>
-            // --- Application State ---
             let state = {
                 settings: { aspectRatio: "square", layout: "bottom" },
                 tiers: [
@@ -442,7 +439,6 @@
                     { id: "t4", name: "C Tier", color: "#ffff7f", images: [] },
                 ],
                 bank: [],
-                // Maps unique src or id strings to custom text descriptions
                 descriptions: {},
             };
 
@@ -450,12 +446,50 @@
             let activeModalTierId = null;
             let activeModalItemWrap = null;
 
-            // --- Initial Setup ---
             document.addEventListener("DOMContentLoaded", () => {
                 renderBoard();
                 renderBank();
                 setupEventListeners();
             });
+
+            // Generates a clean canvas representing the element layout rules
+            function createDragGhostCanvas(imgElement) {
+                const imgW = imgElement.naturalWidth || imgElement.width || 70;
+                const imgH = imgElement.naturalHeight || imgElement.height || 70;
+
+                let canvasW = 70;
+                let canvasH = 70;
+                
+                if (state.settings.aspectRatio === "aspect") {
+                    const ratio = imgW / imgH;
+                    canvasW = 70 * ratio;
+                    canvasH = 70;
+                }
+
+                const canvas = document.createElement("canvas");
+                canvas.width = canvasW;
+                canvas.height = canvasH;
+                const ctx = canvas.getContext("2d");
+                
+                if (!ctx) return null;
+
+                if (state.settings.aspectRatio === "square") {
+                    const scale = Math.max(70 / imgW, 70 / imgH);
+                    const nw = imgW * scale;
+                    const nh = imgH * scale;
+                    const nx = (70 - nw) / 2;
+                    const ny = (70 - nh) / 2;
+                    ctx.drawImage(imgElement, nx, ny, nw, nh);
+                } else {
+                    ctx.drawImage(imgElement, 0, 0, canvasW, canvasH);
+                }
+                
+                return {
+                    canvas: canvas,
+                    offsetX: canvasW / 2,
+                    offsetY: canvasH / 2
+                };
+            }
 
             function updateGlobalAspectClass() {
                 const board = document.getElementById("tier-board");
@@ -474,7 +508,6 @@
             }
 
             function setupEventListeners() {
-                // File Input Loader
                 document
                     .getElementById("image-loader")
                     .addEventListener("change", async (e) => {
@@ -494,7 +527,6 @@
                         e.target.value = "";
                     });
 
-                // Add Image URL Button
                 document
                     .getElementById("add-url-btn")
                     .addEventListener("click", () => {
@@ -505,7 +537,6 @@
                         }
                     });
 
-                // Add New Tier Button
                 document
                     .getElementById("add-tier-btn")
                     .addEventListener("click", () => {
@@ -519,20 +550,13 @@
                         renderBoard();
                     });
 
-                // Aspect Ratio Toggle
                 document
                     .getElementById("aspect-ratio-select")
                     .addEventListener("change", (e) => {
                         state.settings.aspectRatio = e.target.value;
                         updateGlobalAspectClass();
-                        document
-                            .querySelectorAll(".tier-item-img")
-                            .forEach((img) => {
-                                img.className = `tier-item-img fit-${state.settings.aspectRatio}`;
-                            });
                     });
 
-                // Layout Direction Toggle (Sidebar vs Bottom Bank)
                 document
                     .getElementById("layout-toggle-btn")
                     .addEventListener("click", () => {
@@ -550,7 +574,6 @@
                         }
                     });
 
-                // JSON Export
                 document
                     .getElementById("export-json-btn")
                     .addEventListener("click", () => {
@@ -569,7 +592,6 @@
                         downloadAnchor.remove();
                     });
 
-                // JSON Import
                 document
                     .getElementById("import-json-btn")
                     .addEventListener("click", () => {
@@ -636,7 +658,6 @@
                         input.click();
                     });
 
-                // Trash Zone Drag and Drop Handlers
                 const trashZone = document.getElementById("trash-zone");
                 trashZone.addEventListener("dragover", (e) => {
                     e.preventDefault();
@@ -652,11 +673,11 @@
                         SilverDraggedElement.closest(
                             ".tier-item-wrap",
                         ).remove();
+                        hideZoomPortal();
                         syncStateFromDOM();
                     }
                 });
 
-                // Row Setting Modal Configuration Controls
                 document
                     .getElementById("modal-close-btn")
                     .addEventListener("click", closeModal);
@@ -683,7 +704,6 @@
                         }
                     });
 
-                // Item Detail Modal Actions
                 document
                     .getElementById("modal-item-save-btn")
                     .addEventListener("click", () => {
@@ -700,22 +720,6 @@
                                 state.descriptions[img.src] = descText;
                             } else {
                                 delete state.descriptions[img.src];
-                            }
-
-                            // Dynamically update or clear the hidden tooltips container
-                            let tooltip =
-                                activeModalItemWrap.querySelector(
-                                    ".item-tooltip",
-                                );
-                            if (descText) {
-                                if (!tooltip) {
-                                    tooltip = document.createElement("div");
-                                    tooltip.className = "item-tooltip";
-                                    activeModalItemWrap.appendChild(tooltip);
-                                }
-                                tooltip.innerText = descText;
-                            } else if (tooltip) {
-                                tooltip.remove();
                             }
                         }
                         document
@@ -748,9 +752,6 @@
                 }
                 document
                     .getElementById("tier-modal")
-                    .classList.remove("remove");
-                document
-                    .getElementById("tier-modal")
                     .classList.remove("active");
                 activeModalTierId = null;
             }
@@ -763,6 +764,51 @@
                 document.getElementById("modal-item-preview").src = img.src;
                 document.getElementById("modal-item-desc").value = savedDesc;
                 document.getElementById("item-modal").classList.add("active");
+            }
+
+            /* --- Portal Preview Controller Logic --- */
+            function showZoomPortal(imgElement, wrapperElement) {
+                if (SilverDraggedElement) return; 
+                
+                const portal = document.getElementById("global-zoom-portal");
+                const portalImg = document.getElementById("portal-img");
+                const portalText = document.getElementById("portal-text");
+                
+                const rect = imgElement.getBoundingClientRect();
+                
+                portalImg.src = imgElement.src;
+                
+                // Track dynamic widths when working in "Keep Aspect Ratio" settings
+                portal.style.width = `${rect.width}px`;
+                portal.style.height = `${rect.height}px`;
+                
+                portal.style.left = `${rect.left}px`;
+                portal.style.top = `${rect.top}px`;
+                portal.style.display = "block";
+                
+                const savedDesc = state.descriptions[imgElement.src] || "";
+                if (savedDesc) {
+                    portalText.innerText = savedDesc;
+                    portalText.style.display = "block";
+                } else {
+                    portalText.style.display = "none";
+                }
+                
+                requestAnimationFrame(() => {
+                    portal.style.opacity = "1";
+                });
+                
+                imgElement.style.visibility = "hidden";
+            }
+
+            function hideZoomPortal() {
+                const portal = document.getElementById("global-zoom-portal");
+                portal.style.opacity = "0";
+                portal.style.display = "none";
+                
+                document.querySelectorAll(".tier-item-img").forEach(img => {
+                    img.style.visibility = "visible";
+                });
             }
 
             // --- Rendering Logic Engine ---
@@ -841,41 +887,50 @@
                 const wrapper = document.createElement("div");
                 wrapper.className = "tier-item-wrap";
 
+                const trigger = document.createElement("div");
+                trigger.className = "hitbox-trigger";
+                trigger.draggable = true;
+
                 const img = document.createElement("img");
                 img.src = src;
-                img.className = `tier-item-img fit-${state.settings.aspectRatio}`;
-                img.draggable = true;
+                img.className = "tier-item-img";
 
-                // Open context window modal on click
-                img.addEventListener("click", (e) => {
+                trigger.addEventListener("mouseenter", () => showZoomPortal(img, wrapper));
+                trigger.addEventListener("mouseleave", hideZoomPortal);
+
+                trigger.addEventListener("click", (e) => {
                     e.stopPropagation();
+                    hideZoomPortal();
                     openItemModal(wrapper);
                 });
 
-                img.addEventListener("dragstart", (e) => {
-                    SilverDraggedElement = img;
+                trigger.addEventListener("dragstart", (e) => {
+                    hideZoomPortal();
+                    SilverDraggedElement = trigger;
+                    
+                    if (e.dataTransfer && typeof e.dataTransfer.setDragImage === "function") {
+                        const ghostData = createDragGhostCanvas(img);
+                        if (ghostData) {
+                            e.dataTransfer.setDragImage(ghostData.canvas, ghostData.offsetX, ghostData.offsetY);
+                        }
+                    }
+                    
                     img.style.opacity = "0.4";
                     setTimeout(() => {
                         wrapper.style.opacity = "0.2";
                     }, 0);
                 });
 
-                img.addEventListener("dragend", () => {
+                trigger.addEventListener("dragend", () => {
                     SilverDraggedElement = null;
                     img.style.opacity = "1";
                     wrapper.style.opacity = "1";
+                    img.style.visibility = "visible";
                     syncStateFromDOM();
                 });
 
+                wrapper.appendChild(trigger);
                 wrapper.appendChild(img);
-
-                // Re-append text tooltips if descriptive details exist inside state data properties
-                if (state.descriptions[src]) {
-                    const tooltip = document.createElement("div");
-                    tooltip.className = "item-tooltip";
-                    tooltip.innerText = state.descriptions[src];
-                    wrapper.appendChild(tooltip);
-                }
 
                 return wrapper;
             }
@@ -891,7 +946,7 @@
                 }
             }
 
-            // --- Drag & Drop Tracking Controls (Flicker Fix Applied Here) ---
+            // --- Drag & Drop Tracking Controls ---
 
             function setupDropContainer(container) {
                 container.addEventListener("dragover", (e) => {
@@ -921,20 +976,16 @@
                     ),
                 ];
 
-                // FLICKER FIX: Sort targets by spatial line breaks relative to current cursor index placement
                 return draggableElements.reduce(
                     (closest, child) => {
-                        const img = child.querySelector(".tier-item-img");
-                        if (img === SilverDraggedElement) return closest;
+                        const trigger = child.querySelector(".hitbox-trigger");
+                        if (trigger === SilverDraggedElement) return closest;
 
                         const box = child.getBoundingClientRect();
-
-                        // Check if the cursor is vertically matching the bounding height box rows space environment
                         const insideVerticalBounds =
                             y >= box.top && y <= box.bottom;
 
                         if (insideVerticalBounds) {
-                            // Sort linearly horizontally across grid structures
                             const offset = x - (box.left + box.width / 2);
                             if (offset < 0 && offset > closest.offset) {
                                 return { offset: offset, element: child };
@@ -942,7 +993,6 @@
                                 return closest;
                             }
                         } else {
-                            // Fallback sorting criteria algorithm parameters if sorting row heights ranges mismatch
                             const distance = Math.hypot(
                                 x - (box.left + box.width / 2),
                                 y - (box.top + box.height / 2),
