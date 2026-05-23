@@ -9,8 +9,8 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash in only 2 i
 - Lightweight, bloat-free, fully offline and local.
 
 **How to Use**
-1. Download 'index.html'
-2. Double-click it to run it directly in your web browser.
+1. Download 'index.html' by either clicking it above in the file list and then clicking the download button, or by just clicking the green 'Code' button, downloading the zip, and extracting it.
+2. Double-click the html file to run it directly in your web browser.
 3. Have fun!
 
 This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with the code.
