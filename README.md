@@ -17,4 +17,4 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash in only 2 i
 2. Double-click the html file to run it directly in your web browser.
 3. Have fun!
 
-This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with the code.
+This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with it.
