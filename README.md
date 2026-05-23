@@ -4,7 +4,7 @@
 
 This is an HTML file you can open with your web browser, it lets you create [tier lists.](https://en.wikipedia.org/wiki/Tier_list)
 
-It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash in only 2 iterations, and only took a few minutes to test and consider complete. Further updates of course took more iterations.
+It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash, and it only took 2 iterations to create v1.0.
 
 **Features**
 - Creatable, moveable, colorable, deletable tiers.
