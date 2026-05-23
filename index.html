@@ -410,7 +410,7 @@
             <div class="tier-board aspect-mode-inactive" id="tier-board"></div>
 
             <div class="image-bank-container">
-                <h3>Image Bank</h3>
+                <h3>Image Bank <span id="bank-count" style="font-size:0.7em; font-weight:normal; color:#aaa;"></span></h3>
                 <div class="image-bank aspect-mode-inactive" id="image-bank"></div>
             </div>
         </div>
@@ -467,10 +467,13 @@
             let state = {
                 settings: { aspectRatio: "square", layout: "bottom" },
                 tiers: [
-                    { id: "t1", name: "S Tier", color: "#ff7f7f", images: [] },
-                    { id: "t2", name: "A Tier", color: "#ffbf7f", images: [] },
-                    { id: "t3", name: "B Tier", color: "#ffdf7f", images: [] },
-                    { id: "t4", name: "C Tier", color: "#ffff7f", images: [] },
+                    { id: "t1", name: "S", color: "#ff7f7f", images: [] },
+                    { id: "t2", name: "A", color: "#ffbf7f", images: [] },
+                    { id: "t3", name: "B", color: "#ffdf7f", images: [] },
+                    { id: "t4", name: "C", color: "#ffff7f", images: [] },
+                    { id: "t5", name: "D", color: "#bfff7f", images: [] },
+                    { id: "t6", name: "E", color: "#7fffff", images: [] },
+                    { id: "t7", name: "F", color: "#bf7fff", images: [] },
                 ],
                 bank: [],
                 descriptions: {},
@@ -480,6 +483,21 @@
             let activeModalTierId = null;
             let activeModalItemWrap = null;
             let hasUnsavedChanges = false;
+
+            // Image registry: maps short key -> full src (base64 or URL)
+            // DOM wrappers store only the key via data-img-key, so syncStateFromDOM
+            // never has to read .src (which is catastrophically slow for 1000s of base64 strings)
+            const imageRegistry = {};
+            let imageKeyCounter = 0;
+            function registerImage(src) {
+                // If this src is already registered, reuse its key
+                for (const [k, v] of Object.entries(imageRegistry)) {
+                    if (v === src) return k;
+                }
+                const key = "img_" + (++imageKeyCounter);
+                imageRegistry[key] = src;
+                return key;
+            }
 
             document.addEventListener("DOMContentLoaded", () => {
                 renderBoard();
@@ -711,6 +729,9 @@
                                             state = parsed;
                                             if (!state.descriptions)
                                                 state.descriptions = {};
+                                            // Clear registry so imported srcs get fresh keys
+                                            for (const k in imageRegistry) delete imageRegistry[k];
+                                            imageKeyCounter = 0;
 
                                             document.getElementById(
                                                 "aspect-ratio-select",
@@ -975,6 +996,15 @@
                 });
             }
 
+            function updateBankCount() {
+                const bankCount = state.bank.length;
+                const tierCount = state.tiers.reduce((sum, t) => sum + t.images.length, 0);
+                const countEl = document.getElementById("bank-count");
+                if (countEl) {
+                    countEl.textContent = `(${bankCount} in bank, ${tierCount} in list)`;
+                }
+            }
+
             function renderBank() {
                 const bank = document.getElementById("image-bank");
                 bank.innerHTML = "";
@@ -984,11 +1014,14 @@
                 state.bank.forEach((src) => {
                     bank.appendChild(createImageWrapperElement(src));
                 });
+                updateBankCount();
             }
 
             function createImageWrapperElement(src) {
+                const key = registerImage(src);
                 const wrapper = document.createElement("div");
                 wrapper.className = "tier-item-wrap";
+                wrapper.dataset.imgKey = key;
 
                 const trigger = document.createElement("div");
                 trigger.className = "hitbox-trigger";
@@ -1017,18 +1050,33 @@
                             e.dataTransfer.setDragImage(ghostData.canvas, ghostData.offsetX, ghostData.offsetY);
                         }
                     }
-                    
+
                     img.style.opacity = "0.4";
                     setTimeout(() => {
-                        wrapper.style.opacity = "0.6";
+                        // Create a zero-size placeholder to track insertion point without affecting layout
+                        _dragPlaceholder = document.createElement("div");
+                        _dragPlaceholder.className = "drag-placeholder";
+                        _dragPlaceholder.style.cssText = "width:0;height:0;overflow:hidden;padding:0;margin:0;border:0;";
+                        wrapper.parentNode.insertBefore(_dragPlaceholder, wrapper);
+                        wrapper.style.display = "none";
                     }, 0);
                 });
 
                 trigger.addEventListener("dragend", () => {
-                    SilverDraggedElement = null;
+                    hideDropIndicator();
                     img.style.opacity = "1";
-                    wrapper.style.opacity = "1";
                     img.style.visibility = "visible";
+                    wrapper.style.display = "";
+
+                    // Move wrapper to where the placeholder ended up, then remove placeholder
+                    if (_dragPlaceholder && _dragPlaceholder.parentNode) {
+                        _dragPlaceholder.parentNode.insertBefore(wrapper, _dragPlaceholder);
+                        _dragPlaceholder.remove();
+                    }
+                    _dragPlaceholder = null;
+                    SilverDraggedElement = null;
+                    _dragFramePending = false;
+
                     syncStateFromDOM();
                     markUnsaved();
                 });
@@ -1052,77 +1100,179 @@
             }
 
             // --- Drag & Drop Tracking Controls ---
+            // The dragged wrapper is hidden (display:none). A zero-size placeholder marks
+            // the insertion point in the DOM without affecting layout. A separate visible
+            // drop-indicator bar is absolutely positioned to show where the item will land.
+
+            let _dragFramePending = false;
+            let _dragPlaceholder = null;
+            let _dropIndicator = null;
+
+            function ensureDropIndicator() {
+                if (!_dropIndicator) {
+                    _dropIndicator = document.createElement("div");
+                    _dropIndicator.id = "drop-indicator";
+                    _dropIndicator.style.cssText = `
+                        position: fixed;
+                        width: 3px;
+                        background: #4af;
+                        border-radius: 2px;
+                        pointer-events: none;
+                        z-index: 9999;
+                        display: none;
+                        box-shadow: 0 0 6px #4af;
+                    `;
+                    document.body.appendChild(_dropIndicator);
+                }
+                return _dropIndicator;
+            }
+
+            function showDropIndicator(x, top, height) {
+                const ind = ensureDropIndicator();
+                ind.style.display = "block";
+                ind.style.left = (x - 2) + "px";
+                ind.style.top = top + "px";
+                ind.style.height = height + "px";
+            }
+
+            function hideDropIndicator() {
+                if (_dropIndicator) _dropIndicator.style.display = "none";
+            }
 
             function setupDropContainer(container) {
                 container.addEventListener("dragover", (e) => {
                     e.preventDefault();
-                    if (!SilverDraggedElement) return;
+                    if (!SilverDraggedElement || !_dragPlaceholder) return;
 
-                    const targetWrap =
-                        SilverDraggedElement.closest(".tier-item-wrap");
-                    const afterElement = getDragAfterElement(
-                        container,
-                        e.clientX,
-                        e.clientY,
-                    );
+                    if (_dragFramePending) return;
+                    _dragFramePending = true;
+                    requestAnimationFrame(() => {
+                        _dragFramePending = false;
+                        if (!SilverDraggedElement || !_dragPlaceholder) return;
 
-                    if (afterElement == null) {
-                        container.appendChild(targetWrap);
-                    } else {
-                        container.insertBefore(targetWrap, afterElement);
-                    }
+                        const result = getDragAfterElement(container, e.clientX, e.clientY);
+
+                        // Move the zero-size placeholder to track insertion point
+                        if (result.insertBefore == null) {
+                            if (container.lastElementChild !== _dragPlaceholder) {
+                                container.appendChild(_dragPlaceholder);
+                            }
+                        } else if (result.insertBefore !== _dragPlaceholder) {
+                            container.insertBefore(_dragPlaceholder, result.insertBefore);
+                        }
+
+                        // Show the visual indicator bar
+                        if (result.indicatorX !== null) {
+                            showDropIndicator(result.indicatorX, result.indicatorTop, result.indicatorHeight);
+                        } else {
+                            hideDropIndicator();
+                        }
+                    });
                 });
             }
 
             function getDragAfterElement(container, x, y) {
-                const draggableElements = [
-                    ...container.querySelectorAll(
-                        ".tier-item-wrap:not(:focus-within)",
-                    ),
-                ];
+                const noResult = { insertBefore: null, indicatorX: null, indicatorTop: 0, indicatorHeight: 0 };
 
-                return draggableElements.reduce(
-                    (closest, child) => {
-                        const trigger = child.querySelector(".hitbox-trigger");
-                        if (trigger === SilverDraggedElement) return closest;
+                // Real items only — no placeholder, no dragged wrapper
+                const items = [...container.querySelectorAll(".tier-item-wrap")]
+                    .filter(el => !el.classList.contains("drag-placeholder") &&
+                                  el.querySelector(".hitbox-trigger") !== SilverDraggedElement);
 
-                        const box = child.getBoundingClientRect();
-                        const insideVerticalBounds =
-                            y >= box.top && y <= box.bottom;
+                if (items.length === 0) {
+                    // Empty container — indicator at left edge
+                    const cbox = container.getBoundingClientRect();
+                    return { insertBefore: null, indicatorX: cbox.left + 6, indicatorTop: cbox.top + 4, indicatorHeight: cbox.height - 8 };
+                }
 
-                        if (insideVerticalBounds) {
-                            const offset = x - (box.left + box.width / 2);
-                            if (offset < 0 && offset > closest.offset) {
-                                return { offset: offset, element: child };
-                            } else {
-                                return closest;
-                            }
-                        } else {
-                            const distance = Math.hypot(
-                                x - (box.left + box.width / 2),
-                                y - (box.top + box.height / 2),
-                            );
-                            if (
-                                !closest.insideRow &&
-                                distance < closest.distance
-                            ) {
-                                return {
-                                    offset: Number.NEGATIVE_INFINITY,
-                                    distance: distance,
-                                    element: child,
-                                    insideRow: false,
-                                };
-                            }
-                            return closest;
+                // Cluster into visual rows by top coordinate (tolerance 10px).
+                // Items are laid out by the browser; their positions are stable because
+                // the dragged wrapper is display:none and the placeholder is zero-size.
+                const ROW_TOLERANCE = 10;
+                const rows = [];
+                for (const el of items) {
+                    const box = el.getBoundingClientRect();
+                    let placed = false;
+                    for (const row of rows) {
+                        if (Math.abs(box.top - row.top) <= ROW_TOLERANCE) {
+                            row.elements.push({ el, box });
+                            if (box.bottom > row.bottom) row.bottom = box.bottom;
+                            placed = true;
+                            break;
                         }
-                    },
-                    {
-                        offset: Number.NEGATIVE_INFINITY,
-                        distance: Number.POSITIVE_INFINITY,
-                        element: null,
-                        insideRow: true,
-                    },
-                ).element;
+                    }
+                    if (!placed) rows.push({ top: box.top, bottom: box.bottom, elements: [{ el, box }] });
+                }
+                rows.sort((a, b) => a.top - b.top);
+
+                // Find which row the cursor is in
+                let targetRow = rows.find(r => y >= r.top - ROW_TOLERANCE && y <= r.bottom + ROW_TOLERANCE);
+                if (!targetRow) {
+                    // Between rows or outside — pick nearest
+                    targetRow = rows.reduce((best, r) => {
+                        const mid = (r.top + r.bottom) / 2;
+                        const dist = Math.abs(y - mid);
+                        return dist < best.dist ? { row: r, dist } : best;
+                    }, { row: null, dist: Infinity }).row;
+                }
+                if (!targetRow) return noResult;
+
+                targetRow.elements.sort((a, b) => a.box.left - b.box.left);
+                const elems = targetRow.elements;
+
+                // Find which element the cursor is over (clamp to last if past all)
+                let hoveredIdx = elems.length - 1;
+                for (let i = 0; i < elems.length; i++) {
+                    if (x <= elems[i].box.right) { hoveredIdx = i; break; }
+                }
+
+                const { el, box } = elems[hoveredIdx];
+                const center = box.left + box.width / 2;
+                const rowTop = targetRow.top;
+                const rowHeight = targetRow.bottom - targetRow.top;
+
+                if (x < center) {
+                    // Left half → insert before this element; indicator on its left edge
+                    return {
+                        insertBefore: el,
+                        indicatorX: box.left,
+                        indicatorTop: rowTop,
+                        indicatorHeight: rowHeight
+                    };
+                } else {
+                    // Right half → insert after this element
+                    if (hoveredIdx + 1 < elems.length) {
+                        // There's a next element in the same visual row
+                        const nextEl = elems[hoveredIdx + 1].el;
+                        return {
+                            insertBefore: nextEl,
+                            indicatorX: box.right,
+                            indicatorTop: rowTop,
+                            indicatorHeight: rowHeight
+                        };
+                    } else {
+                        // Last item in this visual row — find the first element of the next row
+                        const currentRowIndex = rows.indexOf(targetRow);
+                        const nextRow = rows[currentRowIndex + 1];
+                        if (nextRow && nextRow.elements.length > 0) {
+                            nextRow.elements.sort((a, b) => a.box.left - b.box.left);
+                            const firstOfNextRow = nextRow.elements[0];
+                            return {
+                                insertBefore: firstOfNextRow.el,
+                                indicatorX: box.right,
+                                indicatorTop: rowTop,
+                                indicatorHeight: rowHeight
+                            };
+                        }
+                        // Truly the last item in the container — append to end
+                        return {
+                            insertBefore: null,
+                            indicatorX: box.right,
+                            indicatorTop: rowTop,
+                            indicatorHeight: rowHeight
+                        };
+                    }
+                }
             }
 
             function syncStateFromDOM() {
@@ -1131,15 +1281,16 @@
                     const targetTier = state.tiers.find((t) => t.id === id);
                     if (targetTier) {
                         targetTier.images = [
-                            ...row.querySelectorAll(".tier-item-img"),
-                        ].map((img) => img.src);
+                            ...row.querySelectorAll(".tier-item-wrap"),
+                        ].map((wrap) => imageRegistry[wrap.dataset.imgKey]).filter(Boolean);
                     }
                 });
                 state.bank = [
                     ...document
                         .getElementById("image-bank")
-                        .querySelectorAll(".tier-item-img"),
-                ].map((img) => img.src);
+                        .querySelectorAll(".tier-item-wrap"),
+                ].map((wrap) => imageRegistry[wrap.dataset.imgKey]).filter(Boolean);
+                updateBankCount();
             }
         </script>
     </body>
