@@ -17,6 +17,36 @@
                 margin: 20px;
                 user-select: none;
             }
+
+            /* Main Workspace Layout Wrapper */
+            .workspace-container {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                transition: flex-direction 0.3s ease;
+            }
+            .workspace-container.sidebar-mode {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            .workspace-container.sidebar-mode #tier-board {
+                flex-grow: 1;
+                width: 70%;
+            }
+            .workspace-container.sidebar-mode .image-bank-container {
+                width: 28%;
+                position: sticky;
+                top: 20px;
+                max-height: 85vh;
+                display: flex;
+                flex-direction: column;
+            }
+            .workspace-container.sidebar-mode #image-bank {
+                flex-grow: 1;
+                overflow-y: auto;
+                max-height: 70vh;
+            }
+
             /* Toolbar */
             .toolbar {
                 background: var(--panel-color);
@@ -40,6 +70,12 @@
             }
             button:hover {
                 background: #555;
+            }
+            .btn-layout-toggle {
+                background: #2b5c8f;
+            }
+            .btn-layout-toggle:hover {
+                background: #3a7bc0;
             }
 
             /* Trash Zone */
@@ -84,6 +120,7 @@
                 align-items: center;
                 gap: 8px;
                 border-right: 1px solid #333;
+                flex-shrink: 0;
             }
             .handle-btn {
                 background: none;
@@ -97,32 +134,33 @@
                 color: #fff;
             }
 
-            /* Tier Label Column */
+            /* Tier Label Column Fixes */
             .tier-label {
                 width: 140px;
                 min-width: 140px;
+                max-width: 140px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                padding: 5px;
+                padding: 10px;
                 text-align: center;
                 font-weight: bold;
                 color: #000;
                 cursor: pointer;
                 transition: filter 0.1s;
+                box-sizing: border-box;
+                word-break: break-word;
+                overflow-wrap: break-word;
             }
             .tier-label:hover {
                 filter: brightness(1.1);
             }
-            .tier-label input {
-                background: transparent;
-                border: none;
-                text-align: center;
-                font-weight: bold;
-                font-size: 1.1em;
+            .tier-label span {
                 width: 100%;
-                color: inherit;
-                pointer-events: none;
+                display: -webkit-box;
+                -webkit-line-clamp: 4;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
             }
 
             /* Image Grids */
@@ -161,6 +199,7 @@
 
             /* Core Item Images Layout Base Styling */
             .tier-item-img {
+                width: 70px;
                 height: 70px;
                 cursor: grab;
                 transition:
@@ -173,19 +212,45 @@
                 z-index: 1;
             }
 
-            /* Enhanced Performance Zoom Effect Overlays */
-            .tier-item-img:hover {
-                transform: scale(
-                    2.5
-                ); /* Boosted layout zoom scaling footprint size */
+            /* Enhanced Performance Zoom Effect Overlays & Description Tooltips */
+            .tier-item-wrap:hover .tier-item-img {
+                transform: scale(2.2);
                 z-index: 100;
                 box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.85);
                 border-radius: 2px;
-
-                /* Completely drops the forced aspect width layout block safely */
                 width: auto !important;
-                max-width: 300px; /* Safeguard parameters to prevent extreme horizontal widescreen spans */
+                max-width: 300px;
                 object-fit: contain !important;
+            }
+
+            /* Tooltip Description Settings */
+            .item-tooltip {
+                position: absolute;
+                top: 115px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: #fff;
+                padding: 6px 10px;
+                border-radius: 4px;
+                font-size: 11px;
+                white-space: normal;
+                width: 130px;
+                text-align: center;
+                z-index: 101;
+                pointer-events: none;
+                opacity: 0;
+                visibility: hidden;
+                transition:
+                    opacity 0.15s ease,
+                    visibility 0.15s ease;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+                border: 1px solid #444;
+                word-break: break-word;
+            }
+            .tier-item-wrap:hover .item-tooltip {
+                opacity: 1;
+                visibility: visible;
             }
 
             .fit-square {
@@ -198,7 +263,7 @@
                 object-fit: contain;
             }
 
-            /* Custom alignment fix override whenever application state handles loose aspect ratio settings natively */
+            /* Custom alignment fix override settings */
             .aspect-mode-active .tier-item-wrap {
                 width: auto;
                 min-width: 40px;
@@ -206,7 +271,7 @@
             .aspect-mode-active .tier-item-img {
                 position: relative;
             }
-            .aspect-mode-active .tier-item-img:hover {
+            .aspect-mode-active .tier-item-wrap:hover .tier-item-img {
                 position: absolute;
             }
 
@@ -236,7 +301,7 @@
                 background: #2a2a2a;
                 padding: 20px;
                 border-radius: 8px;
-                width: 300px;
+                width: 320px;
                 display: flex;
                 flex-direction: column;
                 gap: 15px;
@@ -245,15 +310,21 @@
             .modal-content label {
                 font-weight: bold;
                 display: flex;
-                justify-content: space-between;
-                align-items: center;
+                flex-direction: column;
+                gap: 5px;
             }
-            .modal-content input[type="text"] {
-                padding: 6px;
+            .modal-content input[type="text"],
+            .modal-content textarea {
+                padding: 8px;
                 background: #444;
                 border: none;
                 color: #fff;
                 border-radius: 4px;
+                font-family: sans-serif;
+            }
+            .modal-content textarea {
+                resize: vertical;
+                height: 80px;
             }
             .modal-actions {
                 display: flex;
@@ -265,6 +336,18 @@
             }
             .btn-danger:hover {
                 background: #aa2222;
+            }
+
+            /* Preview Image Inside Item Modal */
+            .modal-img-preview {
+                max-width: 100%;
+                max-height: 150px;
+                object-fit: contain;
+                border-radius: 4px;
+                margin: 0 auto;
+                display: block;
+                background: #111;
+                padding: 5px;
             }
         </style>
     </head>
@@ -280,6 +363,9 @@
                 <option value="square">Force Square (Crop)</option>
                 <option value="aspect">Keep Aspect Ratio</option>
             </select>
+            <button id="layout-toggle-btn" class="btn-layout-toggle">
+                ↔ Switch to Sidebar Bank
+            </button>
             <button id="export-json-btn">Export JSON</button>
             <button id="import-json-btn">Import JSON</button>
 
@@ -287,13 +373,18 @@
             <div id="trash-zone" class="trash-zone">🗑️ Drag Here to Delete</div>
         </div>
 
-        <!-- Tier Rows Container -->
-        <div class="tier-board aspect-mode-inactive" id="tier-board"></div>
+        <div class="workspace-container" id="workspace">
+            <!-- Tier Rows Container -->
+            <div class="tier-board aspect-mode-inactive" id="tier-board"></div>
 
-        <!-- Unused Image Bank -->
-        <div class="image-bank-container">
-            <h3>Image Bank</h3>
-            <div class="image-bank aspect-mode-inactive" id="image-bank"></div>
+            <!-- Unused Image Bank -->
+            <div class="image-bank-container">
+                <h3>Image Bank</h3>
+                <div
+                    class="image-bank aspect-mode-inactive"
+                    id="image-bank"
+                ></div>
+            </div>
         </div>
 
         <!-- Tier Actions Settings Popup Menu -->
@@ -317,10 +408,33 @@
             </div>
         </div>
 
+        <!-- Item Detail Popup Modal (New Feature) -->
+        <div id="item-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>Item Custom Details</h3>
+                <img
+                    id="modal-item-preview"
+                    class="modal-img-preview"
+                    src=""
+                    alt="Preview"
+                />
+                <label>
+                    Description / Notes:
+                    <textarea
+                        id="modal-item-desc"
+                        placeholder="Type an item description here..."
+                    ></textarea>
+                </label>
+                <div class="modal-actions" style="justify-content: flex-end">
+                    <button id="modal-item-save-btn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
         <script>
             // --- Application State ---
             let state = {
-                settings: { aspectRatio: "square" },
+                settings: { aspectRatio: "square", layout: "bottom" },
                 tiers: [
                     { id: "t1", name: "S Tier", color: "#ff7f7f", images: [] },
                     { id: "t2", name: "A Tier", color: "#ffbf7f", images: [] },
@@ -328,14 +442,18 @@
                     { id: "t4", name: "C Tier", color: "#ffff7f", images: [] },
                 ],
                 bank: [],
+                // Maps unique src or id strings to custom text descriptions
+                descriptions: {},
             };
 
             let SilverDraggedElement = null;
             let activeModalTierId = null;
+            let activeModalItemWrap = null;
 
             // --- Initial Setup ---
             document.addEventListener("DOMContentLoaded", () => {
                 renderBoard();
+                renderBank();
                 setupEventListeners();
             });
 
@@ -414,6 +532,24 @@
                             });
                     });
 
+                // Layout Direction Toggle (Sidebar vs Bottom Bank)
+                document
+                    .getElementById("layout-toggle-btn")
+                    .addEventListener("click", () => {
+                        const workspace = document.getElementById("workspace");
+                        const toggleBtn =
+                            document.getElementById("layout-toggle-btn");
+                        if (state.settings.layout === "bottom") {
+                            state.settings.layout = "sidebar";
+                            workspace.classList.add("sidebar-mode");
+                            toggleBtn.innerText = "⬇ Switch to Bottom Bank";
+                        } else {
+                            state.settings.layout = "bottom";
+                            workspace.classList.remove("sidebar-mode");
+                            toggleBtn.innerText = "↔ Switch to Sidebar Bank";
+                        }
+                    });
+
                 // JSON Export
                 document
                     .getElementById("export-json-btn")
@@ -450,11 +586,39 @@
                                     );
                                     if (parsed.tiers && parsed.bank) {
                                         state = parsed;
+                                        if (!state.descriptions)
+                                            state.descriptions = {};
+
                                         document.getElementById(
                                             "aspect-ratio-select",
                                         ).value =
                                             state.settings.aspectRatio ||
                                             "square";
+
+                                        const workspace =
+                                            document.getElementById(
+                                                "workspace",
+                                            );
+                                        const toggleBtn =
+                                            document.getElementById(
+                                                "layout-toggle-btn",
+                                            );
+                                        if (
+                                            state.settings.layout === "sidebar"
+                                        ) {
+                                            workspace.classList.add(
+                                                "sidebar-mode",
+                                            );
+                                            toggleBtn.innerText =
+                                                "⬇ Switch to Bottom Bank";
+                                        } else {
+                                            workspace.classList.remove(
+                                                "sidebar-mode",
+                                            );
+                                            toggleBtn.innerText =
+                                                "↔ Switch to Sidebar Bank";
+                                        }
+
                                         updateGlobalAspectClass();
                                         renderBoard();
                                         renderBank();
@@ -492,7 +656,7 @@
                     }
                 });
 
-                // Modal Configuration Controls
+                // Row Setting Modal Configuration Controls
                 document
                     .getElementById("modal-close-btn")
                     .addEventListener("click", closeModal);
@@ -517,6 +681,47 @@
                                 renderBank();
                             }
                         }
+                    });
+
+                // Item Detail Modal Actions
+                document
+                    .getElementById("modal-item-save-btn")
+                    .addEventListener("click", () => {
+                        if (activeModalItemWrap) {
+                            const img =
+                                activeModalItemWrap.querySelector(
+                                    ".tier-item-img",
+                                );
+                            const descText = document
+                                .getElementById("modal-item-desc")
+                                .value.trim();
+
+                            if (descText) {
+                                state.descriptions[img.src] = descText;
+                            } else {
+                                delete state.descriptions[img.src];
+                            }
+
+                            // Dynamically update or clear the hidden tooltips container
+                            let tooltip =
+                                activeModalItemWrap.querySelector(
+                                    ".item-tooltip",
+                                );
+                            if (descText) {
+                                if (!tooltip) {
+                                    tooltip = document.createElement("div");
+                                    tooltip.className = "item-tooltip";
+                                    activeModalItemWrap.appendChild(tooltip);
+                                }
+                                tooltip.innerText = descText;
+                            } else if (tooltip) {
+                                tooltip.remove();
+                            }
+                        }
+                        document
+                            .getElementById("item-modal")
+                            .classList.remove("active");
+                        activeModalItemWrap = null;
                     });
             }
 
@@ -543,8 +748,21 @@
                 }
                 document
                     .getElementById("tier-modal")
+                    .classList.remove("remove");
+                document
+                    .getElementById("tier-modal")
                     .classList.remove("active");
                 activeModalTierId = null;
+            }
+
+            function openItemModal(wrapperElement) {
+                activeModalItemWrap = wrapperElement;
+                const img = wrapperElement.querySelector(".tier-item-img");
+                const savedDesc = state.descriptions[img.src] || "";
+
+                document.getElementById("modal-item-preview").src = img.src;
+                document.getElementById("modal-item-desc").value = savedDesc;
+                document.getElementById("item-modal").classList.add("active");
             }
 
             // --- Rendering Logic Engine ---
@@ -586,10 +804,8 @@
                     label.style.backgroundColor = tier.color;
                     label.addEventListener("click", () => openModal(tier.id));
 
-                    const nameDisplay = document.createElement("input");
-                    nameDisplay.value = tier.name;
-                    nameDisplay.type = "text";
-                    nameDisplay.readOnly = true;
+                    const nameDisplay = document.createElement("span");
+                    nameDisplay.innerText = tier.name;
 
                     label.appendChild(nameDisplay);
 
@@ -630,10 +846,15 @@
                 img.className = `tier-item-img fit-${state.settings.aspectRatio}`;
                 img.draggable = true;
 
+                // Open context window modal on click
+                img.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    openItemModal(wrapper);
+                });
+
                 img.addEventListener("dragstart", (e) => {
                     SilverDraggedElement = img;
                     img.style.opacity = "0.4";
-                    // Brief timeout to hide the item from view when dragging without losing the cursor element blueprint
                     setTimeout(() => {
                         wrapper.style.opacity = "0.2";
                     }, 0);
@@ -647,6 +868,15 @@
                 });
 
                 wrapper.appendChild(img);
+
+                // Re-append text tooltips if descriptive details exist inside state data properties
+                if (state.descriptions[src]) {
+                    const tooltip = document.createElement("div");
+                    tooltip.className = "item-tooltip";
+                    tooltip.innerText = state.descriptions[src];
+                    wrapper.appendChild(tooltip);
+                }
+
                 return wrapper;
             }
 
@@ -661,7 +891,7 @@
                 }
             }
 
-            // --- Drag & Drop Tracking Controls ---
+            // --- Drag & Drop Tracking Controls (Flicker Fix Applied Here) ---
 
             function setupDropContainer(container) {
                 container.addEventListener("dragover", (e) => {
@@ -686,34 +916,57 @@
 
             function getDragAfterElement(container, x, y) {
                 const draggableElements = [
-                    ...container.querySelectorAll(".tier-item-wrap"),
+                    ...container.querySelectorAll(
+                        ".tier-item-wrap:not(:focus-within)",
+                    ),
                 ];
 
+                // FLICKER FIX: Sort targets by spatial line breaks relative to current cursor index placement
                 return draggableElements.reduce(
                     (closest, child) => {
                         const img = child.querySelector(".tier-item-img");
                         if (img === SilverDraggedElement) return closest;
 
                         const box = child.getBoundingClientRect();
-                        const boxCenterX = box.left + box.width / 2;
-                        const boxCenterY = box.top + box.height / 2;
 
-                        const isBefore = x < boxCenterX;
-                        const distance = Math.hypot(
-                            x - boxCenterX,
-                            y - boxCenterY,
-                        );
+                        // Check if the cursor is vertically matching the bounding height box rows space environment
+                        const insideVerticalBounds =
+                            y >= box.top && y <= box.bottom;
 
-                        if (distance < closest.distance) {
-                            return {
-                                distance: distance,
-                                element: isBefore ? child : child.nextSibling,
-                            };
+                        if (insideVerticalBounds) {
+                            // Sort linearly horizontally across grid structures
+                            const offset = x - (box.left + box.width / 2);
+                            if (offset < 0 && offset > closest.offset) {
+                                return { offset: offset, element: child };
+                            } else {
+                                return closest;
+                            }
                         } else {
+                            // Fallback sorting criteria algorithm parameters if sorting row heights ranges mismatch
+                            const distance = Math.hypot(
+                                x - (box.left + box.width / 2),
+                                y - (box.top + box.height / 2),
+                            );
+                            if (
+                                !closest.insideRow &&
+                                distance < closest.distance
+                            ) {
+                                return {
+                                    offset: Number.NEGATIVE_INFINITY,
+                                    distance: distance,
+                                    element: child,
+                                    insideRow: false,
+                                };
+                            }
                             return closest;
                         }
                     },
-                    { distance: Number.POSITIVE_INFINITY, element: null },
+                    {
+                        offset: Number.NEGATIVE_INFINITY,
+                        distance: Number.POSITIVE_INFINITY,
+                        element: null,
+                        insideRow: true,
+                    },
                 ).element;
             }
 
