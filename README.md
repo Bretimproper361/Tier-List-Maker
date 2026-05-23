@@ -10,11 +10,19 @@ It was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash, and it onl
 - Creatable, moveable, colorable, deletable tiers.
 - Import images by file or by URL, move and sort within tiers, can crop into squares or keep aspect ratio, and can delete them.
 - Save/Load by exporting and importing a .json file that contains the entire tier list and its images.
+- Append descriptions to images to add any information you want.
 - Lightweight, bloat-free, fully offline and local.
 
 **How to Download**
 1. Download 'index.html' by either clicking it above in the file list and then clicking the download button, or by just clicking the green 'Code' button, downloading the zip, and extracting it.
 2. Double-click the html file to run it directly in your web browser.
 3. Have fun!
+
+**Useage Guide**
+- Create tiers with the Add New Tier button, and edit them by clicking on their color/name. Move them with the arrows next to them.
+- Click the Browse button to import image files, or click Add Image URL to instead use the image url from an image online.
+- Drag and drop images from the Image Bank into the tier you want to put it in, and organize them within the tier by moving them next to eachother.
+- If you want to add a description to an image that shows when hovering over it, just click on the image.
+- If you want your tier list to be saved, click Export JSON, then when you want to load it, click Import JSON. Otherwise, the tier list is reset to blank if you refresh or close the tab.
 
 This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with it.
