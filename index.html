@@ -33,7 +33,7 @@
                 flex-grow: 1;
                 width: 70%;
             }
-            
+
             .workspace-container.sidebar-mode .image-bank-container {
                 width: 28%;
                 position: sticky;
@@ -41,9 +41,9 @@
                 max-height: 85vh;
                 display: flex;
                 flex-direction: column;
-                z-index: 10; 
+                z-index: 10;
             }
-            
+
             .workspace-container.sidebar-mode #image-bank {
                 flex-grow: 1;
                 overflow-y: auto;
@@ -197,7 +197,7 @@
                 grid-area: stack;
                 display: block;
                 z-index: 1;
-                pointer-events: none; 
+                pointer-events: none;
             }
 
             /* Layout Mode Variations */
@@ -236,15 +236,15 @@
                 transition: opacity 0.1s ease;
                 opacity: 0;
             }
-            
+
             #global-zoom-portal img {
                 width: 100% !important;
                 height: 100% !important;
                 display: block;
-                object-fit: contain !important; 
+                object-fit: contain !important;
                 filter: drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.85));
             }
-            
+
             #global-zoom-portal .portal-tooltip {
                 position: absolute;
                 /* Position close to the bottom edge of the 2.2x scaled image container */
@@ -259,12 +259,12 @@
                 border-radius: 5px;
                 font-size: 12px;
                 line-height: 1.4;
-                
+
                 /* Smart fluid scaling: wider boundaries to prevent run-offs */
                 min-width: 140px;
                 max-width: 280px;
                 width: max-content;
-                
+
                 text-align: center;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
                 border: 1px solid #555;
@@ -286,7 +286,9 @@
                 z-index: 1000;
                 visibility: hidden;
                 opacity: 0;
-                transition: opacity 0.2s, visibility 0.2s;
+                transition:
+                    opacity 0.2s,
+                    visibility 0.2s;
             }
             .modal-overlay.active {
                 visibility: visible;
@@ -367,11 +369,33 @@
                 z-index: 2000;
                 visibility: hidden;
                 opacity: 0;
-                transition: opacity 0.15s, visibility 0.15s;
+                transition:
+                    opacity 0.15s,
+                    visibility 0.15s;
             }
             .loading-overlay.active {
                 visibility: visible;
                 opacity: 1;
+            }
+            /* Standby mode: lighter, cursor pointer, slightly different tint */
+            .loading-overlay.standby {
+                visibility: visible;
+                opacity: 1;
+                background: rgba(0, 0, 0, 0.35);
+                cursor: pointer;
+            }
+            .loading-overlay.standby .loading-spinner {
+                border-top-color: #888;
+                animation-duration: 1.4s;
+            }
+            #loading-dismiss-hint {
+                margin-top: 10px;
+                font-size: 0.78em;
+                color: #aaa;
+                display: none;
+            }
+            .loading-overlay.standby #loading-dismiss-hint {
+                display: block;
             }
             .loading-spinner {
                 width: 40px;
@@ -383,13 +407,40 @@
                 margin-bottom: 10px;
             }
             @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+            /* Toast notification */
+            #toast-notification {
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%) translateY(20px);
+                background: rgba(30, 30, 30, 0.96);
+                color: #fff;
+                padding: 12px 22px;
+                border-radius: 8px;
+                font-size: 0.9em;
+                border: 1px solid #4af;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+                z-index: 3000;
+                opacity: 0;
+                transition: opacity 0.25s ease, transform 0.25s ease;
+                pointer-events: none;
+                white-space: nowrap;
+            }
+            #toast-notification.visible {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
             }
         </style>
     </head>
     <body>
-        <h1>Tier List Maker</h1>
+        <h1 id="page-title" title="Click to edit title" style="cursor:pointer; display:inline-block;">Tier List Maker</h1>
 
         <div class="toolbar">
             <input type="file" id="image-loader" multiple accept="image/*" />
@@ -404,32 +455,54 @@
             </button>
             <button id="export-json-btn">Export JSON</button>
             <button id="import-json-btn">Import JSON</button>
+            <button id="export-image-btn">Export Image</button>
         </div>
 
         <div class="workspace-container" id="workspace">
             <div class="tier-board aspect-mode-inactive" id="tier-board"></div>
 
             <div class="image-bank-container">
-                <h3>Image Bank <span id="bank-count" style="font-size:0.7em; font-weight:normal; color:#aaa;"></span></h3>
-                <div class="image-bank aspect-mode-inactive" id="image-bank"></div>
+                <h3>
+                    Image Bank
+                    <span
+                        id="bank-count"
+                        style="
+                            font-size: 0.7em;
+                            font-weight: normal;
+                            color: #aaa;
+                        "
+                    ></span>
+                </h3>
+                <div
+                    class="image-bank aspect-mode-inactive"
+                    id="image-bank"
+                ></div>
             </div>
         </div>
+
+        <!-- Toast notification -->
+        <div id="toast-notification"></div>
 
         <!-- Dynamic Screen Loading HUD Component Layer -->
         <div id="loading-indicator" class="loading-overlay">
             <div class="loading-spinner"></div>
-            <div id="loading-text" style="font-weight: bold;">Processing...</div>
+            <div id="loading-text" style="font-weight: bold">Processing...</div>
+            <div id="loading-dismiss-hint">Click anywhere to dismiss</div>
         </div>
 
         <!-- Global Portal Element to handle clipping-free high-res zoom -->
         <div id="global-zoom-portal">
             <img id="portal-img" src="" alt="Zoom Preview" />
-            <div id="portal-text" class="portal-tooltip" style="display: none;"></div>
+            <div
+                id="portal-text"
+                class="portal-tooltip"
+                style="display: none"
+            ></div>
         </div>
 
         <div id="tier-modal" class="modal-overlay">
             <div class="modal-content">
-                <h3>Edit Tier Settings</h3>
+                <h3>Tier Settings</h3>
                 <label>
                     Label Text:
                     <input type="text" id="modal-tier-name" />
@@ -447,17 +520,56 @@
             </div>
         </div>
 
+        <!-- Export Image Quality Modal -->
+        <div id="export-image-modal" class="modal-overlay">
+            <div class="modal-content" style="width:300px;">
+                <h3>Export Tier List as Image</h3>
+                <label>
+                    Quality:
+                    <select id="export-image-quality" style="width:100%; margin-top:5px;">
+                        <option value="1.5" selected>Low (1.5x)</option>
+                        <option value="3">High (3x)</option>
+                    </select>
+                </label>
+                <p style="color:#aaa; font-size:0.85em; margin:0;">The image will include only the tier list rows, cropped tightly. Resolution scales dynamically with the list size.</p>
+                <div class="modal-actions">
+                    <button id="export-image-cancel-btn">Cancel</button>
+                    <button id="export-image-confirm-btn" class="btn-info">Download</button>
+                </div>
+            </div>
+        </div>
+
         <div id="item-modal" class="modal-overlay">
             <div class="modal-content">
-                <h3>Item Custom Details</h3>
-                <img id="modal-item-preview" class="modal-img-preview" src="" alt="Preview" />
+                <h3>Image Settings</h3>
+                <img
+                    id="modal-item-preview"
+                    class="modal-img-preview"
+                    src=""
+                    alt="Preview"
+                />
                 <label>
                     Description / Notes:
-                    <textarea id="modal-item-desc" placeholder="Type an item description here..."></textarea>
+                    <textarea
+                        id="modal-item-desc"
+                        placeholder="Type an item description here..."
+                    ></textarea>
                 </label>
                 <div class="modal-actions">
-                    <button id="modal-item-delete-btn" class="btn-danger" title="Permanently delete item">Delete</button>
-                    <button id="modal-item-view-btn" class="btn-info" title="Open full scale asset in a new tab">View Image</button>
+                    <button
+                        id="modal-item-delete-btn"
+                        class="btn-danger"
+                        title="Permanently delete item"
+                    >
+                        Delete
+                    </button>
+                    <button
+                        id="modal-item-view-btn"
+                        class="btn-info"
+                        title="Open full scale asset in a new tab"
+                    >
+                        View Image
+                    </button>
                     <button id="modal-item-save-btn">Save Changes</button>
                 </div>
             </div>
@@ -466,6 +578,7 @@
         <script>
             let state = {
                 settings: { aspectRatio: "square", layout: "bottom" },
+                title: "Tier List Maker",
                 tiers: [
                     { id: "t1", name: "S", color: "#ff7f7f", images: [] },
                     { id: "t2", name: "A", color: "#ffbf7f", images: [] },
@@ -484,28 +597,43 @@
             let activeModalItemWrap = null;
             let hasUnsavedChanges = false;
 
-            // Image registry: maps short key -> full src (base64 or URL)
-            // DOM wrappers store only the key via data-img-key, so syncStateFromDOM
-            // never has to read .src (which is catastrophically slow for 1000s of base64 strings)
+            // Image registry: maps key -> src string (base64 or blob URL)
+            // blobRegistry: maps key -> File object (for deferred base64 on export)
+            // srcToKey: reverse Map for O(1) dedup instead of O(n) scan
             const imageRegistry = {};
+            const blobRegistry = {};   // key -> File (only for local blob URLs)
+            const srcToKey = new Map();
             let imageKeyCounter = 0;
-            function registerImage(src) {
-                // If this src is already registered, reuse its key
-                for (const [k, v] of Object.entries(imageRegistry)) {
-                    if (v === src) return k;
-                }
-                const key = "img_" + (++imageKeyCounter);
+
+            function registerImage(src, file = null) {
+                if (srcToKey.has(src)) return srcToKey.get(src);
+                const key = "img_" + ++imageKeyCounter;
                 imageRegistry[key] = src;
+                srcToKey.set(src, key);
+                if (file) blobRegistry[key] = file;
                 return key;
+            }
+
+            function unregisterImage(key) {
+                const src = imageRegistry[key];
+                if (src) {
+                    srcToKey.delete(src);
+                    if (src.startsWith("blob:")) URL.revokeObjectURL(src);
+                }
+                delete imageRegistry[key];
+                delete blobRegistry[key];
             }
 
             document.addEventListener("DOMContentLoaded", () => {
                 renderBoard();
                 renderBank();
                 setupEventListeners();
-                
+
                 // Initialize the structural view on boot based directly on tracking state settings
                 applyLayoutMode(state.settings.layout);
+
+                // --- Editable page title ---
+                setupTitleEdit(document.getElementById("page-title"));
             });
 
             function markUnsaved() {
@@ -520,18 +648,34 @@
             window.addEventListener("beforeunload", (e) => {
                 if (hasUnsavedChanges) {
                     e.preventDefault();
-                    e.returnValue = "You have unsaved changes on your tier list. Are you sure you want to leave?";
+                    e.returnValue =
+                        "You have unsaved changes on your tier list. Are you sure you want to leave?";
                 }
             });
 
             // Loading system handlers
             function showLoading(msg) {
-                document.getElementById("loading-text").innerText = msg || "Processing...";
-                document.getElementById("loading-indicator").classList.add("active");
+                document.getElementById("loading-text").innerText =
+                    msg || "Processing...";
+                document
+                    .getElementById("loading-indicator")
+                    .classList.add("active");
             }
 
             function hideLoading() {
-                document.getElementById("loading-indicator").classList.remove("active");
+                document
+                    .getElementById("loading-indicator")
+                    .classList.remove("active");
+            }
+
+            function showToast(msg, duration = 4000) {
+                const toast = document.getElementById("toast-notification");
+                toast.textContent = msg;
+                toast.classList.add("visible");
+                clearTimeout(toast._hideTimer);
+                toast._hideTimer = setTimeout(() => {
+                    toast.classList.remove("visible");
+                }, duration);
             }
 
             function applyLayoutMode(mode) {
@@ -551,11 +695,12 @@
             // Generates a clean canvas representing the element layout rules
             function createDragGhostCanvas(imgElement) {
                 const imgW = imgElement.naturalWidth || imgElement.width || 70;
-                const imgH = imgElement.naturalHeight || imgElement.height || 70;
+                const imgH =
+                    imgElement.naturalHeight || imgElement.height || 70;
 
                 let canvasW = 70;
                 let canvasH = 70;
-                
+
                 if (state.settings.aspectRatio === "aspect") {
                     const ratio = imgW / imgH;
                     canvasW = 70 * ratio;
@@ -566,7 +711,7 @@
                 canvas.width = canvasW;
                 canvas.height = canvasH;
                 const ctx = canvas.getContext("2d");
-                
+
                 if (!ctx) return null;
 
                 if (state.settings.aspectRatio === "square") {
@@ -579,11 +724,11 @@
                 } else {
                     ctx.drawImage(imgElement, 0, 0, canvasW, canvasH);
                 }
-                
+
                 return {
                     canvas: canvas,
                     offsetX: canvasW / 2,
-                    offsetY: canvasH / 2
+                    offsetY: canvasH / 2,
                 };
             }
 
@@ -603,31 +748,304 @@
                 }
             }
 
+            function setupTitleEdit(h1El) {
+                h1El.addEventListener("click", () => {
+                    const current = h1El.innerText;
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.value = current;
+                    input.style.cssText = "font-size:inherit; font-weight:inherit; font-family:inherit; background:#333; color:#fff; border:2px solid #4af; border-radius:4px; padding:2px 8px; width:" + Math.max(220, current.length * 16 + 40) + "px;";
+                    h1El.replaceWith(input);
+                    input.focus();
+                    input.select();
+                    let committed = false;
+                    const commit = () => {
+                        if (committed) return;
+                        committed = true;
+                        const newTitle = input.value.trim() || "Tier List Maker";
+                        const newH1 = document.createElement("h1");
+                        newH1.id = "page-title";
+                        newH1.title = "Click to edit title";
+                        newH1.style.cssText = "cursor:pointer; display:inline-block;";
+                        newH1.innerText = newTitle;
+                        input.replaceWith(newH1);
+                        document.title = newTitle;
+                        state.title = newTitle;
+                        setupTitleEdit(newH1);
+                        markUnsaved();
+                    };
+                    input.addEventListener("blur", commit);
+                    input.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter") { e.preventDefault(); commit(); }
+                        if (e.key === "Escape") { input.value = current; commit(); }
+                    });
+                });
+            }
+
+            function exportTierListImage(quality) {
+                const board = document.getElementById("tier-board");
+                const rows = board.querySelectorAll(".tier-row");
+                if (rows.length === 0) {
+                    alert("No tier rows to export.");
+                    return;
+                }
+
+                const scale = parseFloat(quality) || 1;
+                const boardRect = board.getBoundingClientRect();
+
+                // --- Find the right edge of the furthest-right image across all rows ---
+                // If no images exist anywhere, fall back to the full board width.
+                let maxContentRight = 0; // relative to boardRect.left
+                rows.forEach((row) => {
+                    // Right edge of the label column (always present, always rendered)
+                    const label = row.querySelector(".tier-label");
+                    if (label) {
+                        const r = label.getBoundingClientRect().right - boardRect.left;
+                        if (r > maxContentRight) maxContentRight = r;
+                    }
+                    // Right edge of the last image in the items area (if any)
+                    const imgs = row.querySelectorAll(".tier-item-img");
+                    imgs.forEach((img) => {
+                        const r = img.getBoundingClientRect().right - boardRect.left;
+                        if (r > maxContentRight) maxContentRight = r;
+                    });
+                });
+
+                // Add a small right-side padding (6px matches the items gap)
+                const PADDING = 6;
+                const contentWidth = Math.round(Math.min(maxContentRight + PADDING, boardRect.width));
+
+                // --- Determine where the label column starts (skip the handle column) ---
+                // The handle is the first child of a tier-row; we exclude it from the image.
+                let handleWidth = 0;
+                const firstHandle = rows[0].querySelector(".tier-handle");
+                if (firstHandle) {
+                    handleWidth = Math.round(firstHandle.getBoundingClientRect().width);
+                }
+
+                // Canvas dimensions: cropped width (no handle), full height, at scale
+                const W = contentWidth - handleWidth;
+                const H = Math.round(boardRect.height);
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(W * scale);
+                canvas.height = Math.round(H * scale);
+                const ctx = canvas.getContext("2d");
+                ctx.scale(scale, scale);
+
+                // Background
+                ctx.fillStyle = "#111";
+                ctx.fillRect(0, 0, W, H);
+
+                const rowPromises = [];
+                rows.forEach((row) => {
+                    const rRect = row.getBoundingClientRect();
+                    // x offset is relative to where the label starts (after handle)
+                    const originX = boardRect.left + handleWidth;
+                    const ry = rRect.top - boardRect.top;
+                    const rw = W;
+                    const rh = rRect.height;
+
+                    // Row background
+                    ctx.fillStyle = "#111";
+                    ctx.fillRect(0, ry, rw, rh);
+
+                    // Row border
+                    ctx.strokeStyle = "#333";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(0.5, ry + 0.5, rw - 1, rh - 1);
+
+                    // Tier label
+                    const label = row.querySelector(".tier-label");
+                    if (label) {
+                        const lRect = label.getBoundingClientRect();
+                        const lx = lRect.left - originX;
+                        const ly = lRect.top - boardRect.top;
+                        ctx.fillStyle = label.style.backgroundColor || "#888";
+                        ctx.fillRect(lx, ly, lRect.width, lRect.height);
+
+                        // Label text
+                        const span = label.querySelector("span");
+                        const labelText = span ? span.innerText : label.innerText;
+                        ctx.fillStyle = "#000";
+                        ctx.font = `bold ${Math.round(lRect.height * 0.22)}px sans-serif`;
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        const maxW = lRect.width - 12;
+                        const lineH = lRect.height * 0.24;
+                        const words = labelText.split(" ");
+                        let lines = [];
+                        let cur = "";
+                        for (const w of words) {
+                            const test = cur ? cur + " " + w : w;
+                            if (ctx.measureText(test).width > maxW && cur) {
+                                lines.push(cur);
+                                cur = w;
+                            } else {
+                                cur = test;
+                            }
+                        }
+                        if (cur) lines.push(cur);
+                        const totalH = lines.length * lineH;
+                        const startY = ly + lRect.height / 2 - totalH / 2 + lineH / 2;
+                        lines.forEach((line, i) => {
+                            ctx.fillText(line, lx + lRect.width / 2, startY + i * lineH);
+                        });
+                    }
+
+                    // Item images
+                    const imgs = row.querySelectorAll(".tier-item-img");
+                    imgs.forEach((img) => {
+                        const iRect = img.getBoundingClientRect();
+                        const ix = iRect.left - originX;
+                        const iy = iRect.top - boardRect.top;
+                        const dw = iRect.width;
+                        const dh = iRect.height;
+                        rowPromises.push(
+                            new Promise((res) => {
+                                try {
+                                    const nw = img.naturalWidth || dw;
+                                    const nh = img.naturalHeight || dh;
+                                    if (state.settings.aspectRatio === "square" && nw > 0 && nh > 0) {
+                                        // Replicate object-fit: cover — scale so shorter side fills,
+                                        // then center-crop to the destination square
+                                        const scaleF = Math.max(dw / nw, dh / nh);
+                                        const sw = dw / scaleF;   // source width to sample
+                                        const sh = dh / scaleF;   // source height to sample
+                                        const sx = (nw - sw) / 2; // center crop X
+                                        const sy = (nh - sh) / 2; // center crop Y
+                                        ctx.drawImage(img, sx, sy, sw, sh, ix, iy, dw, dh);
+                                    } else {
+                                        ctx.drawImage(img, ix, iy, dw, dh);
+                                    }
+                                } catch (e) {}
+                                res();
+                            })
+                        );
+                    });
+                });
+
+                Promise.all(rowPromises).then(() => {
+                    const link = document.createElement("a");
+                    link.download = "tier-list.png";
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                    hideLoading();
+                });
+            }
+
             function setupEventListeners() {
+                document
+                    .getElementById("export-image-btn")
+                    .addEventListener("click", () => {
+                        document.getElementById("export-image-modal").classList.add("active");
+                    });
+
+                document
+                    .getElementById("export-image-cancel-btn")
+                    .addEventListener("click", () => {
+                        document.getElementById("export-image-modal").classList.remove("active");
+                    });
+
+                document
+                    .getElementById("export-image-confirm-btn")
+                    .addEventListener("click", () => {
+                        const quality = document.getElementById("export-image-quality").value;
+                        document.getElementById("export-image-modal").classList.remove("active");
+                        showLoading("Rendering tier list image...");
+                        setTimeout(() => {
+                            exportTierListImage(quality);
+                        }, 80);
+                    });
+
+                // Image import loading flow:
+                // 1. Click → full loading overlay "Waiting for file selection..."
+                // 2. Dialog closes (window focus) → switch to standby mode:
+                //    dimmer overlay, slower spinner, "Transferring files..." + click-to-dismiss
+                // 3a. change event fires → take over with real progress, clear standby
+                // 3b. User clicks standby overlay → dismiss it; change event will re-show if it fires
+                const imageLoaderInput = document.getElementById("image-loader");
+                const loadingEl = document.getElementById("loading-indicator");
+                let _imageImportExpected = false;
+
+                function enterStandby() {
+                    loadingEl.classList.remove("active");
+                    loadingEl.classList.add("standby");
+                    document.getElementById("loading-text").textContent = "Transferring files, please wait...";
+                }
+
+                function exitStandby() {
+                    loadingEl.classList.remove("standby");
+                }
+
+                // Click-to-dismiss the standby overlay
+                loadingEl.addEventListener("click", () => {
+                    if (loadingEl.classList.contains("standby")) {
+                        exitStandby();
+                        hideLoading();
+                        _imageImportExpected = false;
+                    }
+                });
+
+                imageLoaderInput.addEventListener("click", () => {
+                    _imageImportExpected = true;
+                    showLoading("Waiting for file selection...");
+
+                    const onFocus = () => {
+                        window.removeEventListener("focus", onFocus);
+                        // Dialog just closed. Switch to standby — the change event
+                        // may still be incoming (OS file transfer in progress).
+                        // If no change fires and user doesn't dismiss, standby sits quietly.
+                        if (_imageImportExpected) {
+                            enterStandby();
+                        }
+                    };
+                    window.addEventListener("focus", onFocus);
+                    imageLoaderInput._focusCleanup = () => window.removeEventListener("focus", onFocus);
+                });
+
                 document
                     .getElementById("image-loader")
                     .addEventListener("change", async (e) => {
+                        // Cancel the focus→standby path if it hasn't fired yet
+                        if (imageLoaderInput._focusCleanup) {
+                            imageLoaderInput._focusCleanup();
+                            imageLoaderInput._focusCleanup = null;
+                        }
+                        _imageImportExpected = false;
+                        exitStandby();
+
                         const files = Array.from(e.target.files);
-                        if(files.length === 0) return;
-                        
-                        showLoading("Importing local image assets...");
-                        setTimeout(async () => {
-                            for (const file of files) {
-                                await new Promise((resolve) => {
-                                    const reader = new FileReader();
-                                    reader.onload = (evt) => {
-                                        state.bank.push(evt.target.result);
-                                        resolve();
-                                    };
-                                    reader.onerror = () => resolve();
-                                    reader.readAsDataURL(file);
-                                });
+                        if (files.length === 0) { hideLoading(); return; }
+
+                        showLoading(`Adding images... (0/${files.length})`);
+                        await new Promise(r => requestAnimationFrame(r));
+
+                        const bank = document.getElementById("image-bank");
+                        let added = 0;
+
+                        for (const file of files) {
+                            // createObjectURL is synchronous and instant — no FileReader,
+                            // no base64 encoding. The browser reads the file lazily when
+                            // the <img> actually needs to decode it.
+                            const blobUrl = URL.createObjectURL(file);
+                            registerImage(blobUrl, file);
+
+                            // Append directly to DOM — image appears as soon as browser decodes it
+                            bank.appendChild(createImageWrapperElement(blobUrl));
+                            state.bank.push(blobUrl);
+                            added++;
+
+                            // Yield every 10 images so the browser can paint and counter updates
+                            if (added % 10 === 0 || added === files.length) {
+                                showLoading(`Adding images... (${added}/${files.length})`);
+                                updateBankCount();
+                                await new Promise(r => requestAnimationFrame(r));
                             }
-                            renderBank();
-                            markUnsaved();
-                            e.target.value = "";
-                            hideLoading();
-                        }, 50);
+                        }
+
+                        markUnsaved();
+                        e.target.value = "";
+                        hideLoading();
                     });
 
                 document
@@ -644,7 +1062,9 @@
                                 hideLoading();
                             };
                             tempImg.onerror = () => {
-                                alert("Failed to resolve or parse image asset file data stream from targeted pointer origin path.");
+                                alert(
+                                    "Failed to resolve or parse image asset file data stream from targeted pointer origin path.",
+                                );
                                 hideLoading();
                             };
                             tempImg.src = url;
@@ -686,25 +1106,86 @@
 
                 document
                     .getElementById("export-json-btn")
-                    .addEventListener("click", () => {
-                        showLoading("Compiling tracking system export parameters...");
-                        setTimeout(() => {
-                            syncStateFromDOM();
-                            const dataStr =
-                                "data:text/json;charset=utf-8," +
-                                encodeURIComponent(JSON.stringify(state));
-                            const downloadAnchor = document.createElement("a");
-                            downloadAnchor.setAttribute("href", dataStr);
-                            downloadAnchor.setAttribute(
-                                "download",
-                                "tier-list.json",
-                            );
-                            document.body.appendChild(downloadAnchor);
-                            downloadAnchor.click();
-                            downloadAnchor.remove();
-                            clearUnsaved();
+                    .addEventListener("click", async () => {
+                        showLoading("Preparing export...");
+                        await new Promise(r => requestAnimationFrame(r));
+
+                        syncStateFromDOM();
+
+                        // Collect all keys that map to blob URLs — need to convert to base64 for portability
+                        const blobKeys = Object.keys(imageRegistry).filter(k =>
+                            imageRegistry[k] && imageRegistry[k].startsWith("blob:")
+                        );
+
+                        // Build a serializable snapshot: replace blob URLs with base64
+                        const exportRegistry = { ...imageRegistry };
+
+                        if (blobKeys.length > 0) {
+                            showLoading(`Converting images for export... (0/${blobKeys.length})`);
+                            await new Promise(r => requestAnimationFrame(r));
+
+                            for (let i = 0; i < blobKeys.length; i++) {
+                                const key = blobKeys[i];
+                                const file = blobRegistry[key];
+                                if (file) {
+                                    exportRegistry[key] = await new Promise((res, rej) => {
+                                        const reader = new FileReader();
+                                        reader.onload = e => res(e.target.result);
+                                        reader.onerror = () => res(imageRegistry[key]); // fallback
+                                        reader.readAsDataURL(file);
+                                    });
+                                }
+                                if ((i + 1) % 5 === 0 || i === blobKeys.length - 1) {
+                                    showLoading(`Converting images for export... (${i + 1}/${blobKeys.length})`);
+                                    await new Promise(r => requestAnimationFrame(r));
+                                }
+                            }
+                        }
+
+                        // Build exportable state: replace blob URL strings with base64 in tiers/bank
+                        const exportState = {
+                            ...state,
+                            tiers: state.tiers.map(t => ({
+                                ...t,
+                                images: t.images.map(src => {
+                                    if (src && src.startsWith("blob:")) {
+                                        const key = srcToKey.get(src);
+                                        return key ? exportRegistry[key] : src;
+                                    }
+                                    return src;
+                                })
+                            })),
+                            bank: state.bank.map(src => {
+                                if (src && src.startsWith("blob:")) {
+                                    const key = srcToKey.get(src);
+                                    return key ? exportRegistry[key] : src;
+                                }
+                                return src;
+                            }),
+                            // descriptions are already keyed by imgKey — stable
+                        };
+
+                        showLoading("Opening save dialog...");
+                        let dataStr;
+                        try {
+                            dataStr = "data:text/json;charset=utf-8," +
+                                encodeURIComponent(JSON.stringify(exportState));
+                        } catch (err) {
                             hideLoading();
-                        }, 100);
+                            alert("Failed to serialize state to JSON.");
+                            return;
+                        }
+
+                        await new Promise(r => setTimeout(r, 120));
+                        const downloadAnchor = document.createElement("a");
+                        downloadAnchor.setAttribute("href", dataStr);
+                        downloadAnchor.setAttribute("download", "tier-list.json");
+                        document.body.appendChild(downloadAnchor);
+                        downloadAnchor.click();
+                        downloadAnchor.remove();
+                        clearUnsaved();
+                        hideLoading();
+                        showToast("File explorer opening — save your tier-list.json");
                     });
 
                 document
@@ -715,29 +1196,39 @@
                         input.accept = ".json";
                         input.onchange = (e) => {
                             const file = e.target.files[0];
-                            if(!file) return;
+                            if (!file) return;
 
-                            showLoading("Parsing target layout document schema...");
+                            showLoading("Parsing layout document...");
                             setTimeout(() => {
                                 const reader = new FileReader();
                                 reader.onload = (evt) => {
                                     try {
-                                        const parsed = JSON.parse(
-                                            evt.target.result,
-                                        );
+                                        const parsed = JSON.parse(evt.target.result);
                                         if (parsed.tiers && parsed.bank) {
                                             state = parsed;
                                             if (!state.descriptions)
                                                 state.descriptions = {};
-                                            // Clear registry so imported srcs get fresh keys
+
+                                            // Restore title if present
+                                            const restoredTitle = state.title || "Tier List Maker";
+                                            const titleEl = document.getElementById("page-title");
+                                            if (titleEl) titleEl.innerText = restoredTitle;
+                                            document.title = restoredTitle;
+
+                                            // Revoke all existing blob URLs to free memory
+                                            for (const k of Object.keys(imageRegistry)) {
+                                                const src = imageRegistry[k];
+                                                if (src && src.startsWith("blob:"))
+                                                    URL.revokeObjectURL(src);
+                                            }
+                                            // Reset all registry structures
                                             for (const k in imageRegistry) delete imageRegistry[k];
+                                            for (const k in blobRegistry) delete blobRegistry[k];
+                                            srcToKey.clear();
                                             imageKeyCounter = 0;
 
-                                            document.getElementById(
-                                                "aspect-ratio-select",
-                                            ).value =
-                                                state.settings.aspectRatio ||
-                                                "square";
+                                            document.getElementById("aspect-ratio-select").value =
+                                                state.settings.aspectRatio || "square";
 
                                             applyLayoutMode(state.settings.layout || "bottom");
                                             updateGlobalAspectClass();
@@ -792,18 +1283,15 @@
                     .getElementById("modal-item-save-btn")
                     .addEventListener("click", () => {
                         if (activeModalItemWrap) {
-                            const img =
-                                activeModalItemWrap.querySelector(
-                                    ".tier-item-img",
-                                );
+                            const key = activeModalItemWrap.dataset.imgKey;
                             const descText = document
                                 .getElementById("modal-item-desc")
                                 .value.trim();
 
                             if (descText) {
-                                state.descriptions[img.src] = descText;
+                                state.descriptions[key] = descText;
                             } else {
-                                delete state.descriptions[img.src];
+                                delete state.descriptions[key];
                             }
                             markUnsaved();
                         }
@@ -817,36 +1305,50 @@
                     .getElementById("modal-item-delete-btn")
                     .addEventListener("click", () => {
                         if (activeModalItemWrap) {
-                            if (confirm("Are you sure you want to permanently delete this item asset element?")) {
-                                const img = activeModalItemWrap.querySelector(".tier-item-img");
-                                if (img && state.descriptions[img.src]) {
-                                    delete state.descriptions[img.src];
-                                }
+                            if (
+                                confirm(
+                                    "Are you sure you want to permanently delete this item asset element?",
+                                )
+                            ) {
+                                const key = activeModalItemWrap.dataset.imgKey;
+                                delete state.descriptions[key];
+                                unregisterImage(key);
                                 activeModalItemWrap.remove();
                                 hideZoomPortal();
                                 syncStateFromDOM();
                                 markUnsaved();
-                                document.getElementById("item-modal").classList.remove("active");
+                                document
+                                    .getElementById("item-modal")
+                                    .classList.remove("active");
                                 activeModalItemWrap = null;
                             }
                         }
                     });
 
-                // New Open Image in New Tab handler pipeline 
+                // New Open Image in New Tab handler pipeline
                 document
                     .getElementById("modal-item-view-btn")
                     .addEventListener("click", () => {
                         if (activeModalItemWrap) {
-                            const img = activeModalItemWrap.querySelector(".tier-item-img");
+                            const img =
+                                activeModalItemWrap.querySelector(
+                                    ".tier-item-img",
+                                );
                             if (img && img.src) {
                                 const newTab = window.open();
                                 if (newTab) {
-                                    newTab.document.write(`<img src="${img.src}" style="max-width:100%; height:auto; display:block; margin:20px auto; background:#111; box-shadow:0 4px 10px rgba(0,0,0,0.5); border-radius:4px;" />`);
-                                    newTab.document.body.style.background = "#1a1a1a";
-                                    newTab.document.title = "View Tier List Asset Element";
+                                    newTab.document.write(
+                                        `<img src="${img.src}" style="max-width:100%; height:auto; display:block; margin:20px auto; background:#111; box-shadow:0 4px 10px rgba(0,0,0,0.5); border-radius:4px;" />`,
+                                    );
+                                    newTab.document.body.style.background =
+                                        "#1a1a1a";
+                                    newTab.document.title =
+                                        "View Tier List Asset Element";
                                     newTab.document.close();
                                 } else {
-                                    alert("Popup blocked! Please allow popups for this site to open images natively.");
+                                    alert(
+                                        "Popup blocked! Please allow popups for this site to open images natively.",
+                                    );
                                 }
                             }
                         }
@@ -884,7 +1386,8 @@
             function openItemModal(wrapperElement) {
                 activeModalItemWrap = wrapperElement;
                 const img = wrapperElement.querySelector(".tier-item-img");
-                const savedDesc = state.descriptions[img.src] || "";
+                const key = wrapperElement.dataset.imgKey;
+                const savedDesc = state.descriptions[key] || "";
 
                 document.getElementById("modal-item-preview").src = img.src;
                 document.getElementById("modal-item-desc").value = savedDesc;
@@ -893,35 +1396,35 @@
 
             /* --- Portal Preview Controller Logic --- */
             function showZoomPortal(imgElement, wrapperElement) {
-                if (SilverDraggedElement) return; 
-                
+                if (SilverDraggedElement) return;
+
                 const portal = document.getElementById("global-zoom-portal");
                 const portalImg = document.getElementById("portal-img");
                 const portalText = document.getElementById("portal-text");
-                
+
                 const rect = imgElement.getBoundingClientRect();
-                
+
                 portalImg.src = imgElement.src;
-                
+
                 portal.style.width = `${rect.width}px`;
                 portal.style.height = `${rect.height}px`;
-                
+
                 portal.style.left = `${rect.left}px`;
                 portal.style.top = `${rect.top}px`;
                 portal.style.display = "block";
-                
-                const savedDesc = state.descriptions[imgElement.src] || "";
+
+                const savedDesc = state.descriptions[wrapperElement.dataset.imgKey] || "";
                 if (savedDesc) {
                     portalText.innerText = savedDesc;
                     portalText.style.display = "block";
                 } else {
                     portalText.style.display = "none";
                 }
-                
+
                 requestAnimationFrame(() => {
                     portal.style.opacity = "1";
                 });
-                
+
                 imgElement.style.visibility = "hidden";
             }
 
@@ -929,8 +1432,8 @@
                 const portal = document.getElementById("global-zoom-portal");
                 portal.style.opacity = "0";
                 portal.style.display = "none";
-                
-                document.querySelectorAll(".tier-item-img").forEach(img => {
+
+                document.querySelectorAll(".tier-item-img").forEach((img) => {
                     img.style.visibility = "visible";
                 });
             }
@@ -998,7 +1501,10 @@
 
             function updateBankCount() {
                 const bankCount = state.bank.length;
-                const tierCount = state.tiers.reduce((sum, t) => sum + t.images.length, 0);
+                const tierCount = state.tiers.reduce(
+                    (sum, t) => sum + t.images.length,
+                    0,
+                );
                 const countEl = document.getElementById("bank-count");
                 if (countEl) {
                     countEl.textContent = `(${bankCount} in bank, ${tierCount} in list)`;
@@ -1031,7 +1537,9 @@
                 img.src = src;
                 img.className = "tier-item-img";
 
-                trigger.addEventListener("mouseenter", () => showZoomPortal(img, wrapper));
+                trigger.addEventListener("mouseenter", () =>
+                    showZoomPortal(img, wrapper),
+                );
                 trigger.addEventListener("mouseleave", hideZoomPortal);
 
                 trigger.addEventListener("click", (e) => {
@@ -1043,11 +1551,18 @@
                 trigger.addEventListener("dragstart", (e) => {
                     hideZoomPortal();
                     SilverDraggedElement = trigger;
-                    
-                    if (e.dataTransfer && typeof e.dataTransfer.setDragImage === "function") {
+
+                    if (
+                        e.dataTransfer &&
+                        typeof e.dataTransfer.setDragImage === "function"
+                    ) {
                         const ghostData = createDragGhostCanvas(img);
                         if (ghostData) {
-                            e.dataTransfer.setDragImage(ghostData.canvas, ghostData.offsetX, ghostData.offsetY);
+                            e.dataTransfer.setDragImage(
+                                ghostData.canvas,
+                                ghostData.offsetX,
+                                ghostData.offsetY,
+                            );
                         }
                     }
 
@@ -1056,8 +1571,12 @@
                         // Create a zero-size placeholder to track insertion point without affecting layout
                         _dragPlaceholder = document.createElement("div");
                         _dragPlaceholder.className = "drag-placeholder";
-                        _dragPlaceholder.style.cssText = "width:0;height:0;overflow:hidden;padding:0;margin:0;border:0;";
-                        wrapper.parentNode.insertBefore(_dragPlaceholder, wrapper);
+                        _dragPlaceholder.style.cssText =
+                            "width:0;height:0;overflow:hidden;padding:0;margin:0;border:0;";
+                        wrapper.parentNode.insertBefore(
+                            _dragPlaceholder,
+                            wrapper,
+                        );
                         wrapper.style.display = "none";
                     }, 0);
                 });
@@ -1070,7 +1589,10 @@
 
                     // Move wrapper to where the placeholder ended up, then remove placeholder
                     if (_dragPlaceholder && _dragPlaceholder.parentNode) {
-                        _dragPlaceholder.parentNode.insertBefore(wrapper, _dragPlaceholder);
+                        _dragPlaceholder.parentNode.insertBefore(
+                            wrapper,
+                            _dragPlaceholder,
+                        );
                         _dragPlaceholder.remove();
                     }
                     _dragPlaceholder = null;
@@ -1130,7 +1652,7 @@
             function showDropIndicator(x, top, height) {
                 const ind = ensureDropIndicator();
                 ind.style.display = "block";
-                ind.style.left = (x - 2) + "px";
+                ind.style.left = x - 2 + "px";
                 ind.style.top = top + "px";
                 ind.style.height = height + "px";
             }
@@ -1150,20 +1672,33 @@
                         _dragFramePending = false;
                         if (!SilverDraggedElement || !_dragPlaceholder) return;
 
-                        const result = getDragAfterElement(container, e.clientX, e.clientY);
+                        const result = getDragAfterElement(
+                            container,
+                            e.clientX,
+                            e.clientY,
+                        );
 
                         // Move the zero-size placeholder to track insertion point
                         if (result.insertBefore == null) {
-                            if (container.lastElementChild !== _dragPlaceholder) {
+                            if (
+                                container.lastElementChild !== _dragPlaceholder
+                            ) {
                                 container.appendChild(_dragPlaceholder);
                             }
                         } else if (result.insertBefore !== _dragPlaceholder) {
-                            container.insertBefore(_dragPlaceholder, result.insertBefore);
+                            container.insertBefore(
+                                _dragPlaceholder,
+                                result.insertBefore,
+                            );
                         }
 
                         // Show the visual indicator bar
                         if (result.indicatorX !== null) {
-                            showDropIndicator(result.indicatorX, result.indicatorTop, result.indicatorHeight);
+                            showDropIndicator(
+                                result.indicatorX,
+                                result.indicatorTop,
+                                result.indicatorHeight,
+                            );
                         } else {
                             hideDropIndicator();
                         }
@@ -1172,17 +1707,32 @@
             }
 
             function getDragAfterElement(container, x, y) {
-                const noResult = { insertBefore: null, indicatorX: null, indicatorTop: 0, indicatorHeight: 0 };
+                const noResult = {
+                    insertBefore: null,
+                    indicatorX: null,
+                    indicatorTop: 0,
+                    indicatorHeight: 0,
+                };
 
                 // Real items only — no placeholder, no dragged wrapper
-                const items = [...container.querySelectorAll(".tier-item-wrap")]
-                    .filter(el => !el.classList.contains("drag-placeholder") &&
-                                  el.querySelector(".hitbox-trigger") !== SilverDraggedElement);
+                const items = [
+                    ...container.querySelectorAll(".tier-item-wrap"),
+                ].filter(
+                    (el) =>
+                        !el.classList.contains("drag-placeholder") &&
+                        el.querySelector(".hitbox-trigger") !==
+                            SilverDraggedElement,
+                );
 
                 if (items.length === 0) {
                     // Empty container — indicator at left edge
                     const cbox = container.getBoundingClientRect();
-                    return { insertBefore: null, indicatorX: cbox.left + 6, indicatorTop: cbox.top + 4, indicatorHeight: cbox.height - 8 };
+                    return {
+                        insertBefore: null,
+                        indicatorX: cbox.left + 6,
+                        indicatorTop: cbox.top + 4,
+                        indicatorHeight: cbox.height - 8,
+                    };
                 }
 
                 // Cluster into visual rows by top coordinate (tolerance 10px).
@@ -1196,24 +1746,37 @@
                     for (const row of rows) {
                         if (Math.abs(box.top - row.top) <= ROW_TOLERANCE) {
                             row.elements.push({ el, box });
-                            if (box.bottom > row.bottom) row.bottom = box.bottom;
+                            if (box.bottom > row.bottom)
+                                row.bottom = box.bottom;
                             placed = true;
                             break;
                         }
                     }
-                    if (!placed) rows.push({ top: box.top, bottom: box.bottom, elements: [{ el, box }] });
+                    if (!placed)
+                        rows.push({
+                            top: box.top,
+                            bottom: box.bottom,
+                            elements: [{ el, box }],
+                        });
                 }
                 rows.sort((a, b) => a.top - b.top);
 
                 // Find which row the cursor is in
-                let targetRow = rows.find(r => y >= r.top - ROW_TOLERANCE && y <= r.bottom + ROW_TOLERANCE);
+                let targetRow = rows.find(
+                    (r) =>
+                        y >= r.top - ROW_TOLERANCE &&
+                        y <= r.bottom + ROW_TOLERANCE,
+                );
                 if (!targetRow) {
                     // Between rows or outside — pick nearest
-                    targetRow = rows.reduce((best, r) => {
-                        const mid = (r.top + r.bottom) / 2;
-                        const dist = Math.abs(y - mid);
-                        return dist < best.dist ? { row: r, dist } : best;
-                    }, { row: null, dist: Infinity }).row;
+                    targetRow = rows.reduce(
+                        (best, r) => {
+                            const mid = (r.top + r.bottom) / 2;
+                            const dist = Math.abs(y - mid);
+                            return dist < best.dist ? { row: r, dist } : best;
+                        },
+                        { row: null, dist: Infinity },
+                    ).row;
                 }
                 if (!targetRow) return noResult;
 
@@ -1223,7 +1786,10 @@
                 // Find which element the cursor is over (clamp to last if past all)
                 let hoveredIdx = elems.length - 1;
                 for (let i = 0; i < elems.length; i++) {
-                    if (x <= elems[i].box.right) { hoveredIdx = i; break; }
+                    if (x <= elems[i].box.right) {
+                        hoveredIdx = i;
+                        break;
+                    }
                 }
 
                 const { el, box } = elems[hoveredIdx];
@@ -1237,7 +1803,7 @@
                         insertBefore: el,
                         indicatorX: box.left,
                         indicatorTop: rowTop,
-                        indicatorHeight: rowHeight
+                        indicatorHeight: rowHeight,
                     };
                 } else {
                     // Right half → insert after this element
@@ -1248,20 +1814,22 @@
                             insertBefore: nextEl,
                             indicatorX: box.right,
                             indicatorTop: rowTop,
-                            indicatorHeight: rowHeight
+                            indicatorHeight: rowHeight,
                         };
                     } else {
                         // Last item in this visual row — find the first element of the next row
                         const currentRowIndex = rows.indexOf(targetRow);
                         const nextRow = rows[currentRowIndex + 1];
                         if (nextRow && nextRow.elements.length > 0) {
-                            nextRow.elements.sort((a, b) => a.box.left - b.box.left);
+                            nextRow.elements.sort(
+                                (a, b) => a.box.left - b.box.left,
+                            );
                             const firstOfNextRow = nextRow.elements[0];
                             return {
                                 insertBefore: firstOfNextRow.el,
                                 indicatorX: box.right,
                                 indicatorTop: rowTop,
-                                indicatorHeight: rowHeight
+                                indicatorHeight: rowHeight,
                             };
                         }
                         // Truly the last item in the container — append to end
@@ -1269,7 +1837,7 @@
                             insertBefore: null,
                             indicatorX: box.right,
                             indicatorTop: rowTop,
-                            indicatorHeight: rowHeight
+                            indicatorHeight: rowHeight,
                         };
                     }
                 }
@@ -1282,14 +1850,18 @@
                     if (targetTier) {
                         targetTier.images = [
                             ...row.querySelectorAll(".tier-item-wrap"),
-                        ].map((wrap) => imageRegistry[wrap.dataset.imgKey]).filter(Boolean);
+                        ]
+                            .map((wrap) => imageRegistry[wrap.dataset.imgKey])
+                            .filter(Boolean);
                     }
                 });
                 state.bank = [
                     ...document
                         .getElementById("image-bank")
                         .querySelectorAll(".tier-item-wrap"),
-                ].map((wrap) => imageRegistry[wrap.dataset.imgKey]).filter(Boolean);
+                ]
+                    .map((wrap) => imageRegistry[wrap.dataset.imgKey])
+                    .filter(Boolean);
                 updateBankCount();
             }
         </script>
