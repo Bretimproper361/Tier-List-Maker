@@ -426,10 +426,12 @@
                 border-radius: 8px;
                 font-size: 0.9em;
                 border: 1px solid #4af;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
                 z-index: 3000;
                 opacity: 0;
-                transition: opacity 0.25s ease, transform 0.25s ease;
+                transition:
+                    opacity 0.25s ease,
+                    transform 0.25s ease;
                 pointer-events: none;
                 white-space: nowrap;
             }
@@ -440,7 +442,13 @@
         </style>
     </head>
     <body>
-        <h1 id="page-title" title="Click to edit title" style="cursor:pointer; display:inline-block;">Tier List Maker</h1>
+        <h1
+            id="page-title"
+            title="Click to edit title"
+            style="cursor: pointer; display: inline-block"
+        >
+            Tier List Maker
+        </h1>
 
         <div class="toolbar">
             <input type="file" id="image-loader" multiple accept="image/*" />
@@ -522,19 +530,26 @@
 
         <!-- Export Image Quality Modal -->
         <div id="export-image-modal" class="modal-overlay">
-            <div class="modal-content" style="width:300px;">
+            <div class="modal-content" style="width: 300px">
                 <h3>Export Tier List as Image</h3>
                 <label>
                     Quality:
-                    <select id="export-image-quality" style="width:100%; margin-top:5px;">
+                    <select
+                        id="export-image-quality"
+                        style="width: 100%; margin-top: 5px"
+                    >
                         <option value="1.5" selected>Low (1.5x)</option>
                         <option value="3">High (3x)</option>
                     </select>
                 </label>
-                <p style="color:#aaa; font-size:0.85em; margin:0;">The image will include only the tier list rows, cropped tightly. Resolution scales dynamically with the list size.</p>
+                <p style="color: #aaa; font-size: 0.85em; margin: 0">
+                    Resolution scales dynamically with the list size.
+                </p>
                 <div class="modal-actions">
                     <button id="export-image-cancel-btn">Cancel</button>
-                    <button id="export-image-confirm-btn" class="btn-info">Download</button>
+                    <button id="export-image-confirm-btn" class="btn-info">
+                        Download
+                    </button>
                 </div>
             </div>
         </div>
@@ -601,13 +616,33 @@
             // blobRegistry: maps key -> File object (for deferred base64 on export)
             // srcToKey: reverse Map for O(1) dedup instead of O(n) scan
             const imageRegistry = {};
-            const blobRegistry = {};   // key -> File (only for local blob URLs)
+            const blobRegistry = {}; // key -> File (only for local blob URLs)
             const srcToKey = new Map();
-            let imageKeyCounter = 0;
+
+            // FAST HASH ALGORITHM FOR STABLE KEYS (Replaces counter incrementation)
+            function generateStringHash(str) {
+                let hash = 0;
+                if (str.length === 0) return "hash_0";
+                for (let i = 0; i < str.length; i++) {
+                    const chr = str.charCodeAt(i);
+                    hash = (hash << 5) - hash + chr;
+                    hash |= 0; // Convert to 32bit integer
+                }
+                return "img_" + Math.abs(hash);
+            }
 
             function registerImage(src, file = null) {
                 if (srcToKey.has(src)) return srcToKey.get(src);
-                const key = "img_" + ++imageKeyCounter;
+
+                // If it's a blob URL and we have the file context, hash by filename + size
+                // to maintain identification across sessions. Otherwise hash the string data directly.
+                let key;
+                if (src.startsWith("blob:") && file) {
+                    key = generateStringHash(file.name + "_" + file.size);
+                } else {
+                    key = generateStringHash(src);
+                }
+
                 imageRegistry[key] = src;
                 srcToKey.set(src, key);
                 if (file) blobRegistry[key] = file;
@@ -754,7 +789,10 @@
                     const input = document.createElement("input");
                     input.type = "text";
                     input.value = current;
-                    input.style.cssText = "font-size:inherit; font-weight:inherit; font-family:inherit; background:#333; color:#fff; border:2px solid #4af; border-radius:4px; padding:2px 8px; width:" + Math.max(220, current.length * 16 + 40) + "px;";
+                    input.style.cssText =
+                        "font-size:inherit; font-weight:inherit; font-family:inherit; background:#333; color:#fff; border:2px solid #4af; border-radius:4px; padding:2px 8px; width:" +
+                        Math.max(220, current.length * 16 + 40) +
+                        "px;";
                     h1El.replaceWith(input);
                     input.focus();
                     input.select();
@@ -762,11 +800,13 @@
                     const commit = () => {
                         if (committed) return;
                         committed = true;
-                        const newTitle = input.value.trim() || "Tier List Maker";
+                        const newTitle =
+                            input.value.trim() || "Tier List Maker";
                         const newH1 = document.createElement("h1");
                         newH1.id = "page-title";
                         newH1.title = "Click to edit title";
-                        newH1.style.cssText = "cursor:pointer; display:inline-block;";
+                        newH1.style.cssText =
+                            "cursor:pointer; display:inline-block;";
                         newH1.innerText = newTitle;
                         input.replaceWith(newH1);
                         document.title = newTitle;
@@ -776,8 +816,14 @@
                     };
                     input.addEventListener("blur", commit);
                     input.addEventListener("keydown", (e) => {
-                        if (e.key === "Enter") { e.preventDefault(); commit(); }
-                        if (e.key === "Escape") { input.value = current; commit(); }
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            commit();
+                        }
+                        if (e.key === "Escape") {
+                            input.value = current;
+                            commit();
+                        }
                     });
                 });
             }
@@ -800,27 +846,34 @@
                     // Right edge of the label column (always present, always rendered)
                     const label = row.querySelector(".tier-label");
                     if (label) {
-                        const r = label.getBoundingClientRect().right - boardRect.left;
+                        const r =
+                            label.getBoundingClientRect().right -
+                            boardRect.left;
                         if (r > maxContentRight) maxContentRight = r;
                     }
                     // Right edge of the last image in the items area (if any)
                     const imgs = row.querySelectorAll(".tier-item-img");
                     imgs.forEach((img) => {
-                        const r = img.getBoundingClientRect().right - boardRect.left;
+                        const r =
+                            img.getBoundingClientRect().right - boardRect.left;
                         if (r > maxContentRight) maxContentRight = r;
                     });
                 });
 
                 // Add a small right-side padding (6px matches the items gap)
                 const PADDING = 6;
-                const contentWidth = Math.round(Math.min(maxContentRight + PADDING, boardRect.width));
+                const contentWidth = Math.round(
+                    Math.min(maxContentRight + PADDING, boardRect.width),
+                );
 
                 // --- Determine where the label column starts (skip the handle column) ---
                 // The handle is the first child of a tier-row; we exclude it from the image.
                 let handleWidth = 0;
                 const firstHandle = rows[0].querySelector(".tier-handle");
                 if (firstHandle) {
-                    handleWidth = Math.round(firstHandle.getBoundingClientRect().width);
+                    handleWidth = Math.round(
+                        firstHandle.getBoundingClientRect().width,
+                    );
                 }
 
                 // Canvas dimensions: cropped width (no handle), full height, at scale
@@ -865,7 +918,9 @@
 
                         // Label text
                         const span = label.querySelector("span");
-                        const labelText = span ? span.innerText : label.innerText;
+                        const labelText = span
+                            ? span.innerText
+                            : label.innerText;
                         ctx.fillStyle = "#000";
                         ctx.font = `bold ${Math.round(lRect.height * 0.22)}px sans-serif`;
                         ctx.textAlign = "center";
@@ -886,9 +941,14 @@
                         }
                         if (cur) lines.push(cur);
                         const totalH = lines.length * lineH;
-                        const startY = ly + lRect.height / 2 - totalH / 2 + lineH / 2;
+                        const startY =
+                            ly + lRect.height / 2 - totalH / 2 + lineH / 2;
                         lines.forEach((line, i) => {
-                            ctx.fillText(line, lx + lRect.width / 2, startY + i * lineH);
+                            ctx.fillText(
+                                line,
+                                lx + lRect.width / 2,
+                                startY + i * lineH,
+                            );
                         });
                     }
 
@@ -905,21 +965,39 @@
                                 try {
                                     const nw = img.naturalWidth || dw;
                                     const nh = img.naturalHeight || dh;
-                                    if (state.settings.aspectRatio === "square" && nw > 0 && nh > 0) {
+                                    if (
+                                        state.settings.aspectRatio ===
+                                            "square" &&
+                                        nw > 0 &&
+                                        nh > 0
+                                    ) {
                                         // Replicate object-fit: cover — scale so shorter side fills,
                                         // then center-crop to the destination square
-                                        const scaleF = Math.max(dw / nw, dh / nh);
-                                        const sw = dw / scaleF;   // source width to sample
-                                        const sh = dh / scaleF;   // source height to sample
+                                        const scaleF = Math.max(
+                                            dw / nw,
+                                            dh / nh,
+                                        );
+                                        const sw = dw / scaleF; // source width to sample
+                                        const sh = dh / scaleF; // source height to sample
                                         const sx = (nw - sw) / 2; // center crop X
                                         const sy = (nh - sh) / 2; // center crop Y
-                                        ctx.drawImage(img, sx, sy, sw, sh, ix, iy, dw, dh);
+                                        ctx.drawImage(
+                                            img,
+                                            sx,
+                                            sy,
+                                            sw,
+                                            sh,
+                                            ix,
+                                            iy,
+                                            dw,
+                                            dh,
+                                        );
                                     } else {
                                         ctx.drawImage(img, ix, iy, dw, dh);
                                     }
                                 } catch (e) {}
                                 res();
-                            })
+                            }),
                         );
                     });
                 });
@@ -937,40 +1015,45 @@
                 document
                     .getElementById("export-image-btn")
                     .addEventListener("click", () => {
-                        document.getElementById("export-image-modal").classList.add("active");
+                        document
+                            .getElementById("export-image-modal")
+                            .classList.add("active");
                     });
 
                 document
                     .getElementById("export-image-cancel-btn")
                     .addEventListener("click", () => {
-                        document.getElementById("export-image-modal").classList.remove("active");
+                        document
+                            .getElementById("export-image-modal")
+                            .classList.remove("active");
                     });
 
                 document
                     .getElementById("export-image-confirm-btn")
                     .addEventListener("click", () => {
-                        const quality = document.getElementById("export-image-quality").value;
-                        document.getElementById("export-image-modal").classList.remove("active");
+                        const quality = document.getElementById(
+                            "export-image-quality",
+                        ).value;
+                        document
+                            .getElementById("export-image-modal")
+                            .classList.remove("active");
                         showLoading("Rendering tier list image...");
                         setTimeout(() => {
                             exportTierListImage(quality);
                         }, 80);
                     });
 
-                // Image import loading flow:
-                // 1. Click → full loading overlay "Waiting for file selection..."
-                // 2. Dialog closes (window focus) → switch to standby mode:
-                //    dimmer overlay, slower spinner, "Transferring files..." + click-to-dismiss
-                // 3a. change event fires → take over with real progress, clear standby
-                // 3b. User clicks standby overlay → dismiss it; change event will re-show if it fires
-                const imageLoaderInput = document.getElementById("image-loader");
+                // Image import loading flow
+                const imageLoaderInput =
+                    document.getElementById("image-loader");
                 const loadingEl = document.getElementById("loading-indicator");
                 let _imageImportExpected = false;
 
                 function enterStandby() {
                     loadingEl.classList.remove("active");
                     loadingEl.classList.add("standby");
-                    document.getElementById("loading-text").textContent = "Transferring files, please wait...";
+                    document.getElementById("loading-text").textContent =
+                        "Transferring files, please wait...";
                 }
 
                 function exitStandby() {
@@ -992,21 +1075,18 @@
 
                     const onFocus = () => {
                         window.removeEventListener("focus", onFocus);
-                        // Dialog just closed. Switch to standby — the change event
-                        // may still be incoming (OS file transfer in progress).
-                        // If no change fires and user doesn't dismiss, standby sits quietly.
                         if (_imageImportExpected) {
                             enterStandby();
                         }
                     };
                     window.addEventListener("focus", onFocus);
-                    imageLoaderInput._focusCleanup = () => window.removeEventListener("focus", onFocus);
+                    imageLoaderInput._focusCleanup = () =>
+                        window.removeEventListener("focus", onFocus);
                 });
 
                 document
                     .getElementById("image-loader")
                     .addEventListener("change", async (e) => {
-                        // Cancel the focus→standby path if it hasn't fired yet
                         if (imageLoaderInput._focusCleanup) {
                             imageLoaderInput._focusCleanup();
                             imageLoaderInput._focusCleanup = null;
@@ -1015,31 +1095,35 @@
                         exitStandby();
 
                         const files = Array.from(e.target.files);
-                        if (files.length === 0) { hideLoading(); return; }
+                        if (files.length === 0) {
+                            hideLoading();
+                            return;
+                        }
 
                         showLoading(`Adding images... (0/${files.length})`);
-                        await new Promise(r => requestAnimationFrame(r));
+                        await new Promise((r) => requestAnimationFrame(r));
 
                         const bank = document.getElementById("image-bank");
                         let added = 0;
 
                         for (const file of files) {
-                            // createObjectURL is synchronous and instant — no FileReader,
-                            // no base64 encoding. The browser reads the file lazily when
-                            // the <img> actually needs to decode it.
                             const blobUrl = URL.createObjectURL(file);
                             registerImage(blobUrl, file);
 
-                            // Append directly to DOM — image appears as soon as browser decodes it
-                            bank.appendChild(createImageWrapperElement(blobUrl));
+                            bank.appendChild(
+                                createImageWrapperElement(blobUrl),
+                            );
                             state.bank.push(blobUrl);
                             added++;
 
-                            // Yield every 10 images so the browser can paint and counter updates
                             if (added % 10 === 0 || added === files.length) {
-                                showLoading(`Adding images... (${added}/${files.length})`);
+                                showLoading(
+                                    `Adding images... (${added}/${files.length})`,
+                                );
                                 updateBankCount();
-                                await new Promise(r => requestAnimationFrame(r));
+                                await new Promise((r) =>
+                                    requestAnimationFrame(r),
+                                );
                             }
                         }
 
@@ -1108,67 +1192,96 @@
                     .getElementById("export-json-btn")
                     .addEventListener("click", async () => {
                         showLoading("Preparing export...");
-                        await new Promise(r => requestAnimationFrame(r));
+                        await new Promise((r) => requestAnimationFrame(r));
 
                         syncStateFromDOM();
 
-                        // Collect all keys that map to blob URLs — need to convert to base64 for portability
-                        const blobKeys = Object.keys(imageRegistry).filter(k =>
-                            imageRegistry[k] && imageRegistry[k].startsWith("blob:")
+                        const blobKeys = Object.keys(imageRegistry).filter(
+                            (k) =>
+                                imageRegistry[k] &&
+                                imageRegistry[k].startsWith("blob:"),
                         );
 
-                        // Build a serializable snapshot: replace blob URLs with base64
                         const exportRegistry = { ...imageRegistry };
+                        const updatedDescriptions = {};
 
                         if (blobKeys.length > 0) {
-                            showLoading(`Converting images for export... (0/${blobKeys.length})`);
-                            await new Promise(r => requestAnimationFrame(r));
+                            showLoading(
+                                `Converting images for export... (0/${blobKeys.length})`,
+                            );
+                            await new Promise((r) => requestAnimationFrame(r));
 
                             for (let i = 0; i < blobKeys.length; i++) {
                                 const key = blobKeys[i];
                                 const file = blobRegistry[key];
                                 if (file) {
-                                    exportRegistry[key] = await new Promise((res, rej) => {
-                                        const reader = new FileReader();
-                                        reader.onload = e => res(e.target.result);
-                                        reader.onerror = () => res(imageRegistry[key]); // fallback
-                                        reader.readAsDataURL(file);
-                                    });
+                                    const base64Data = await new Promise(
+                                        (res, rej) => {
+                                            const reader = new FileReader();
+                                            reader.onload = (e) =>
+                                                res(e.target.result);
+                                            reader.onerror = () =>
+                                                res(imageRegistry[key]); // fallback
+                                            reader.readAsDataURL(file);
+                                        },
+                                    );
+                                    exportRegistry[key] = base64Data;
                                 }
-                                if ((i + 1) % 5 === 0 || i === blobKeys.length - 1) {
-                                    showLoading(`Converting images for export... (${i + 1}/${blobKeys.length})`);
-                                    await new Promise(r => requestAnimationFrame(r));
+                                if (
+                                    (i + 1) % 5 === 0 ||
+                                    i === blobKeys.length - 1
+                                ) {
+                                    showLoading(
+                                        `Converting images for export... (${i + 1}/${blobKeys.length})`,
+                                    );
+                                    await new Promise((r) =>
+                                        requestAnimationFrame(r),
+                                    );
                                 }
                             }
                         }
 
-                        // Build exportable state: replace blob URL strings with base64 in tiers/bank
+                        // FIXED: Re-key the descriptions systematically to their permanent base64 data fingerprint
+                        // so that when imported, the text aligns directly with the file data.
+                        for (const currentKey in state.descriptions) {
+                            const matchingSrc = imageRegistry[currentKey];
+                            if (matchingSrc) {
+                                const portableDataStr =
+                                    exportRegistry[currentKey] || matchingSrc;
+                                const permanentExportKey =
+                                    generateStringHash(portableDataStr);
+                                updatedDescriptions[permanentExportKey] =
+                                    state.descriptions[currentKey];
+                            }
+                        }
+
                         const exportState = {
                             ...state,
-                            tiers: state.tiers.map(t => ({
+                            tiers: state.tiers.map((t) => ({
                                 ...t,
-                                images: t.images.map(src => {
+                                images: t.images.map((src) => {
                                     if (src && src.startsWith("blob:")) {
                                         const key = srcToKey.get(src);
                                         return key ? exportRegistry[key] : src;
                                     }
                                     return src;
-                                })
+                                }),
                             })),
-                            bank: state.bank.map(src => {
+                            bank: state.bank.map((src) => {
                                 if (src && src.startsWith("blob:")) {
                                     const key = srcToKey.get(src);
                                     return key ? exportRegistry[key] : src;
                                 }
                                 return src;
                             }),
-                            // descriptions are already keyed by imgKey — stable
+                            descriptions: updatedDescriptions,
                         };
 
                         showLoading("Opening save dialog...");
                         let dataStr;
                         try {
-                            dataStr = "data:text/json;charset=utf-8," +
+                            dataStr =
+                                "data:text/json;charset=utf-8," +
                                 encodeURIComponent(JSON.stringify(exportState));
                         } catch (err) {
                             hideLoading();
@@ -1176,16 +1289,21 @@
                             return;
                         }
 
-                        await new Promise(r => setTimeout(r, 120));
+                        await new Promise((r) => setTimeout(r, 120));
                         const downloadAnchor = document.createElement("a");
                         downloadAnchor.setAttribute("href", dataStr);
-                        downloadAnchor.setAttribute("download", "tier-list.json");
+                        downloadAnchor.setAttribute(
+                            "download",
+                            "tier-list.json",
+                        );
                         document.body.appendChild(downloadAnchor);
                         downloadAnchor.click();
                         downloadAnchor.remove();
                         clearUnsaved();
                         hideLoading();
-                        showToast("File explorer opening — save your tier-list.json");
+                        showToast(
+                            "File explorer opening — save your tier-list.json",
+                        );
                     });
 
                 document
@@ -1203,40 +1321,74 @@
                                 const reader = new FileReader();
                                 reader.onload = (evt) => {
                                     try {
-                                        const parsed = JSON.parse(evt.target.result);
+                                        const parsed = JSON.parse(
+                                            evt.target.result,
+                                        );
                                         if (parsed.tiers && parsed.bank) {
                                             state = parsed;
                                             if (!state.descriptions)
                                                 state.descriptions = {};
 
                                             // Restore title if present
-                                            const restoredTitle = state.title || "Tier List Maker";
-                                            const titleEl = document.getElementById("page-title");
-                                            if (titleEl) titleEl.innerText = restoredTitle;
+                                            const restoredTitle =
+                                                state.title ||
+                                                "Tier List Maker";
+                                            const titleEl =
+                                                document.getElementById(
+                                                    "page-title",
+                                                );
+                                            if (titleEl)
+                                                titleEl.innerText =
+                                                    restoredTitle;
                                             document.title = restoredTitle;
 
                                             // Revoke all existing blob URLs to free memory
-                                            for (const k of Object.keys(imageRegistry)) {
+                                            for (const k of Object.keys(
+                                                imageRegistry,
+                                            )) {
                                                 const src = imageRegistry[k];
-                                                if (src && src.startsWith("blob:"))
+                                                if (
+                                                    src &&
+                                                    src.startsWith("blob:")
+                                                )
                                                     URL.revokeObjectURL(src);
                                             }
                                             // Reset all registry structures
-                                            for (const k in imageRegistry) delete imageRegistry[k];
-                                            for (const k in blobRegistry) delete blobRegistry[k];
+                                            for (const k in imageRegistry)
+                                                delete imageRegistry[k];
+                                            for (const k in blobRegistry)
+                                                delete blobRegistry[k];
                                             srcToKey.clear();
-                                            imageKeyCounter = 0;
 
-                                            document.getElementById("aspect-ratio-select").value =
-                                                state.settings.aspectRatio || "square";
+                                            document.getElementById(
+                                                "aspect-ratio-select",
+                                            ).value =
+                                                state.settings.aspectRatio ||
+                                                "square";
 
-                                            applyLayoutMode(state.settings.layout || "bottom");
+                                            applyLayoutMode(
+                                                state.settings.layout ||
+                                                    "bottom",
+                                            );
                                             updateGlobalAspectClass();
+
+                                            // Re-register everything with their clean content keys before drawing
+                                            state.tiers.forEach((t) =>
+                                                t.images.forEach((src) =>
+                                                    registerImage(src),
+                                                ),
+                                            );
+                                            state.bank.forEach((src) =>
+                                                registerImage(src),
+                                            );
+
                                             renderBoard();
                                             renderBank();
                                             clearUnsaved();
                                         } else {
-                                            alert("Invalid JSON format structure.");
+                                            alert(
+                                                "Invalid JSON format structure.",
+                                            );
                                         }
                                     } catch (err) {
                                         alert(
@@ -1325,7 +1477,7 @@
                         }
                     });
 
-                // New Open Image in New Tab handler pipeline
+                // Open Image in New Tab handler pipeline
                 document
                     .getElementById("modal-item-view-btn")
                     .addEventListener("click", () => {
@@ -1413,7 +1565,8 @@
                 portal.style.top = `${rect.top}px`;
                 portal.style.display = "block";
 
-                const savedDesc = state.descriptions[wrapperElement.dataset.imgKey] || "";
+                const savedDesc =
+                    state.descriptions[wrapperElement.dataset.imgKey] || "";
                 if (savedDesc) {
                     portalText.innerText = savedDesc;
                     portalText.style.display = "block";
@@ -1529,6 +1682,21 @@
                 wrapper.className = "tier-item-wrap";
                 wrapper.dataset.imgKey = key;
 
+                // FIXED: Support historical string keys if they exist in state or back-match directly
+                if (state.descriptions && !state.descriptions[key]) {
+                    for (const oldKey in state.descriptions) {
+                        if (
+                            oldKey === src ||
+                            generateStringHash(oldKey) === key
+                        ) {
+                            state.descriptions[key] =
+                                state.descriptions[oldKey];
+                            delete state.descriptions[oldKey];
+                            break;
+                        }
+                    }
+                }
+
                 const trigger = document.createElement("div");
                 trigger.className = "hitbox-trigger";
                 trigger.draggable = true;
@@ -1568,7 +1736,6 @@
 
                     img.style.opacity = "0.4";
                     setTimeout(() => {
-                        // Create a zero-size placeholder to track insertion point without affecting layout
                         _dragPlaceholder = document.createElement("div");
                         _dragPlaceholder.className = "drag-placeholder";
                         _dragPlaceholder.style.cssText =
@@ -1587,7 +1754,6 @@
                     img.style.visibility = "visible";
                     wrapper.style.display = "";
 
-                    // Move wrapper to where the placeholder ended up, then remove placeholder
                     if (_dragPlaceholder && _dragPlaceholder.parentNode) {
                         _dragPlaceholder.parentNode.insertBefore(
                             wrapper,
@@ -1622,10 +1788,6 @@
             }
 
             // --- Drag & Drop Tracking Controls ---
-            // The dragged wrapper is hidden (display:none). A zero-size placeholder marks
-            // the insertion point in the DOM without affecting layout. A separate visible
-            // drop-indicator bar is absolutely positioned to show where the item will land.
-
             let _dragFramePending = false;
             let _dragPlaceholder = null;
             let _dropIndicator = null;
@@ -1678,7 +1840,6 @@
                             e.clientY,
                         );
 
-                        // Move the zero-size placeholder to track insertion point
                         if (result.insertBefore == null) {
                             if (
                                 container.lastElementChild !== _dragPlaceholder
@@ -1692,7 +1853,6 @@
                             );
                         }
 
-                        // Show the visual indicator bar
                         if (result.indicatorX !== null) {
                             showDropIndicator(
                                 result.indicatorX,
@@ -1714,7 +1874,6 @@
                     indicatorHeight: 0,
                 };
 
-                // Real items only — no placeholder, no dragged wrapper
                 const items = [
                     ...container.querySelectorAll(".tier-item-wrap"),
                 ].filter(
@@ -1725,7 +1884,6 @@
                 );
 
                 if (items.length === 0) {
-                    // Empty container — indicator at left edge
                     const cbox = container.getBoundingClientRect();
                     return {
                         insertBefore: null,
@@ -1735,9 +1893,6 @@
                     };
                 }
 
-                // Cluster into visual rows by top coordinate (tolerance 10px).
-                // Items are laid out by the browser; their positions are stable because
-                // the dragged wrapper is display:none and the placeholder is zero-size.
                 const ROW_TOLERANCE = 10;
                 const rows = [];
                 for (const el of items) {
@@ -1761,14 +1916,12 @@
                 }
                 rows.sort((a, b) => a.top - b.top);
 
-                // Find which row the cursor is in
                 let targetRow = rows.find(
                     (r) =>
                         y >= r.top - ROW_TOLERANCE &&
                         y <= r.bottom + ROW_TOLERANCE,
                 );
                 if (!targetRow) {
-                    // Between rows or outside — pick nearest
                     targetRow = rows.reduce(
                         (best, r) => {
                             const mid = (r.top + r.bottom) / 2;
@@ -1783,7 +1936,6 @@
                 targetRow.elements.sort((a, b) => a.box.left - b.box.left);
                 const elems = targetRow.elements;
 
-                // Find which element the cursor is over (clamp to last if past all)
                 let hoveredIdx = elems.length - 1;
                 for (let i = 0; i < elems.length; i++) {
                     if (x <= elems[i].box.right) {
@@ -1798,7 +1950,6 @@
                 const rowHeight = targetRow.bottom - targetRow.top;
 
                 if (x < center) {
-                    // Left half → insert before this element; indicator on its left edge
                     return {
                         insertBefore: el,
                         indicatorX: box.left,
@@ -1806,9 +1957,7 @@
                         indicatorHeight: rowHeight,
                     };
                 } else {
-                    // Right half → insert after this element
                     if (hoveredIdx + 1 < elems.length) {
-                        // There's a next element in the same visual row
                         const nextEl = elems[hoveredIdx + 1].el;
                         return {
                             insertBefore: nextEl,
@@ -1817,7 +1966,6 @@
                             indicatorHeight: rowHeight,
                         };
                     } else {
-                        // Last item in this visual row — find the first element of the next row
                         const currentRowIndex = rows.indexOf(targetRow);
                         const nextRow = rows[currentRowIndex + 1];
                         if (nextRow && nextRow.elements.length > 0) {
@@ -1832,7 +1980,6 @@
                                 indicatorHeight: rowHeight,
                             };
                         }
-                        // Truly the last item in the container — append to end
                         return {
                             insertBefore: null,
                             indicatorX: box.right,
