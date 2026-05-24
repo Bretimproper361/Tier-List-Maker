@@ -1,4 +1,4 @@
-Current Version: 1.5
+Current Version: 1.6
 
 [Click here to use the web version without downloading it.](https://milk3e.github.io/Tier-List-Maker/)
 
@@ -13,6 +13,7 @@ Updates are coded by Google Gemini and [Claude](https://claude.com).
 - Creatable, moveable, colorable, deletable tiers.
 - Import images by file or by URL, move and sort within tiers, can crop into squares or keep aspect ratio, and can delete them.
 - Save/Load by exporting and importing a .json file that contains the entire tier list and its images.
+- Export tier list as image with selectable quality.
 - Append descriptions to images to add any information you want.
 - Lightweight, bloat-free, fully offline and local.
 
@@ -22,6 +23,7 @@ Updates are coded by Google Gemini and [Claude](https://claude.com).
 3. Have fun!
 
 **Useage Guide**
+- You can add a title to your tier list by clicking the "Tier List Maker" title to edit it.
 - Create tiers with the Add New Tier button, and edit them by clicking on their color/name. Move them with the arrows next to them.
 - Click the Browse button to import image files, or click Add Image URL to instead use the image url from an image online.
 - Drag and drop images from the Image Bank into the tier you want to put it in, and organize them within the tier by moving them next to eachother.
